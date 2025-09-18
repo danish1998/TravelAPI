@@ -1,0 +1,63 @@
+const jwt = require("jsonwebtoken");
+
+// Reads JWT from cookie named "token" by default
+const getTokenFromCookies = (req, cookieName = "token") => {
+    if (!req || !req.cookies) return null;
+    const token = req.cookies[cookieName];
+    return typeof token === "string" && token.length > 0 ? token : null;
+};
+
+// Verify middleware: attaches decoded payload to req.user if valid
+const verifyToken = (options = {}) => {
+    const {
+        cookieName = process.env.JWT_COOKIE_NAME || "token",
+        required = true,
+        algorithms = [process.env.JWT_ALG || "HS256"],
+    } = options;
+
+    return (req, res, next) => {
+        try {
+            const secret = process.env.JWT_SECRET;
+            if (!secret) {
+                return res.status(500).json({
+                    status: "error",
+                    message: "Server misconfiguration: missing JWT secret",
+                });
+            }
+
+            const token = getTokenFromCookies(req, cookieName);
+
+            if (!token) {
+                if (required) {
+                    return res.status(401).json({
+                        status: "error",
+                        message: "Authentication token missing",
+                    });
+                }
+                req.user = null;
+                return next();
+            }
+
+            const decoded = jwt.verify(token, secret, { algorithms });
+            req.user = decoded;
+            return next();
+        } catch (error) {
+            return res.status(401).json({
+                status: "error",
+                message: "Invalid or expired token",
+            });
+        }
+    };
+};
+
+// Helper to sign tokens in login handlers
+const signToken = (payload, options = {}) => {
+    const secret = process.env.JWT_SECRET;
+    const {
+        expiresIn = process.env.JWT_EXPIRES_IN || "1d",
+        algorithm = process.env.JWT_ALG || "HS256",
+    } = options;
+    return jwt.sign(payload, secret, { expiresIn, algorithm });
+};
+
+module.exports = { verifyToken, signToken };

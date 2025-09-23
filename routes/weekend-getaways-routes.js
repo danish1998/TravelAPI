@@ -3,7 +3,9 @@ const { searchWeekendGetaways, getAllWeekendTypes, getDestinationsByType } = req
 
 const router = express.Router();
 
-// GET /api/v1/weekend-getaways/search?city=Delhi&radius=300&limit=10&weekendType=hill stations
+// GET /api/v1/weekend-getaways/search - Returns 12 most visited Indian places
+// GET /api/v1/weekend-getaways/search?category=historical places - Filter by category
+// GET /api/v1/weekend-getaways/search?limit=5 - Limit results
 router.get("/search", searchWeekendGetaways);
 
 // GET /api/v1/weekend-getaways/types

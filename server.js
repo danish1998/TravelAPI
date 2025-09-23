@@ -1,3 +1,6 @@
+// Load environment variables FIRST
+require("dotenv").config();
+
 const express = require("express");
 const { requestLogger, addTimeStamp } = require("./middleware/customMiddleware");
 const { configureCors } = require("./config/corsConfig");
@@ -11,9 +14,6 @@ const itemsRouter = require("./routes/item-routes");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-
-// Load environment variables
-require("dotenv").config();
 
 // express json middleware
 app.use(requestLogger);
@@ -40,7 +40,7 @@ const locationRouter = require("./routes/location-routes");
 const weekendGetawaysRouter = require("./routes/weekend-getaways-routes");
 const travelCategoriesRouter = require("./routes/travel-categories-routes");
 const continentsRouter = require("./routes/continents-routes");
-app.use("/api/v1/auth", authRouter);
+// app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/flights", flightsRouter);
 app.use("/api/v1/hotels", hotelsRouter);
 app.use("/api/v1/location", locationRouter);

@@ -1,6 +1,6 @@
 const express = require("express");
 const { verifyToken } = require("../middleware/auth");
-const { default: location } = require("../Controllers/locationController");
+const { location } = require("../Controllers/locationController");
 
 const router = express.Router();
 

@@ -1,9 +1,20 @@
 const Amadeus = require('amadeus');
 
-const amadeus = new Amadeus({
-    clientId: process.env.AMADEUS_CLIENT_ID,
-    clientSecret: process.env.AMADEUS_CLIENT_SECRET,
-});
+// Initialize Amadeus client lazily to ensure environment variables are loaded
+let amadeus = null;
+
+const getAmadeusClient = () => {
+    if (!amadeus) {
+        if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
+            throw new Error('Missing Amadeus credentials: AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set');
+        }
+        amadeus = new Amadeus({
+            clientId: process.env.AMADEUS_CLIENT_ID,
+            clientSecret: process.env.AMADEUS_CLIENT_SECRET,
+        });
+    }
+    return amadeus;
+};
 
 // POST /api/v1/flights/search
 // Required body: origin, destination, departureDate (YYYY-MM-DD)
@@ -34,9 +45,8 @@ const searchFlights = async (req, res, next) => {
             limit,
         } = body;
 
-        if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
-            return res.status(500).json({ message: 'Missing Amadeus credentials' });
-        }
+        // Get Amadeus client (will throw if credentials are missing)
+        const amadeusClient = getAmadeusClient();
         if (!origin || !destination || !departureDate) {
             return res.status(400).json({ message: 'origin, destination, departureDate are required' });
         }
@@ -61,7 +71,7 @@ const searchFlights = async (req, res, next) => {
         if (!Number.isNaN(childrenCount) && childrenCount > 0) params.children = String(childrenCount);
         if (!Number.isNaN(infantsCount) && infantsCount > 0) params.infants = String(infantsCount);
 
-        const response = await amadeus.shopping.flightOffersSearch.get(params);
+        const response = await amadeusClient.shopping.flightOffersSearch.get(params);
         const data = response.data || [];
 
         // Build unique carrier code set
@@ -79,7 +89,7 @@ const searchFlights = async (req, res, next) => {
         const codeToAirline = {};
         if (carrierCodes.length > 0) {
             try {
-                const ref = await amadeus.referenceData.airlines.get({ airlineCodes: carrierCodes.join(',') });
+                const ref = await amadeusClient.referenceData.airlines.get({ airlineCodes: carrierCodes.join(',') });
                 const list = ref.data || [];
                 for (const a of list) {
                     if (a.iataCode) {
@@ -177,6 +187,13 @@ const searchFlights = async (req, res, next) => {
 
         return res.json({ count: limited.length, offers: limited });
     } catch (err) {
+        // Handle missing credentials error
+        if (err.message && err.message.includes('Missing Amadeus credentials')) {
+            return res.status(500).json({ 
+                message: 'Server configuration error: Missing Amadeus API credentials',
+                error: 'AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET environment variables must be set'
+            });
+        }
         // Amadeus SDK errors often have response details
         if (err.response && err.response.result) {
             return res.status(err.code || 500).json(err.response.result);

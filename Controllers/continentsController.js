@@ -181,7 +181,7 @@ const getWeatherInfo = async (lat, lon) => {
 // Query params: continent (required), limit (optional), includeWeather (optional)
 const searchByContinent = async (req, res, next) => {
     try {
-        const { continent, limit = 10, includeWeather = false } = req.query;
+        const { continent, limit = 12, includeWeather = false } = req.query;
 
         if (!continent) {
             return res.status(400).json({ 
@@ -203,7 +203,6 @@ const searchByContinent = async (req, res, next) => {
 
         const continentData = CONTINENT_MAPPINGS[normalizedContinent];
         const limitNum = parseInt(limit);
-        const shouldIncludeWeather = includeWeather === 'true';
 
         // Get countries information
         const countriesPromises = continentData.countries.slice(0, limitNum).map(async (countryName) => {
@@ -214,29 +213,7 @@ const searchByContinent = async (req, res, next) => {
         const countries = (await Promise.all(countriesPromises)).filter(Boolean);
 
         // Get cities information
-        const citiesPromises = continentData.majorCities.slice(0, limitNum).map(async (cityName) => {
-            const cityInfo = await getCityInfo(cityName);
-            return cityInfo;
-        });
 
-        const cities = (await Promise.all(citiesPromises)).filter(Boolean);
-
-        // Get weather for cities if requested
-        let weatherData = {};
-        if (shouldIncludeWeather && cities.length > 0) {
-            const weatherPromises = cities.slice(0, 5).map(async (city) => {
-                if (city.latitude && city.longitude) {
-                    const weather = await getWeatherInfo(city.latitude, city.longitude);
-                    return { city: city.name, weather };
-                }
-                return null;
-            });
-            const weatherResults = await Promise.all(weatherPromises);
-            weatherData = weatherResults.filter(Boolean).reduce((acc, item) => {
-                acc[item.city] = item.weather;
-                return acc;
-            }, {});
-        }
 
         // Get Wikipedia description for the continent
         const wikipediaInfo = await getWikipediaDescription(normalizedContinent);
@@ -246,7 +223,6 @@ const searchByContinent = async (req, res, next) => {
             searchParams: {
                 continent: continent,
                 limit: limitNum,
-                includeWeather: shouldIncludeWeather
             },
             continentInfo: {
                 name: normalizedContinent,
@@ -268,23 +244,6 @@ const searchByContinent = async (req, res, next) => {
                         currency: country.currency,
                         language: country.language,
                         flag: country.flag
-                    }))
-                },
-                cities: {
-                    count: cities.length,
-                    data: cities.map(city => ({
-                        name: city.name,
-                        fullName: city.fullName,
-                        country: city.country,
-                        state: city.state,
-                        type: city.type,
-                        coordinates: {
-                            latitude: city.latitude,
-                            longitude: city.longitude
-                        },
-                        ...(shouldIncludeWeather && weatherData[city.name] && {
-                            weather: weatherData[city.name]
-                        })
                     }))
                 }
             }

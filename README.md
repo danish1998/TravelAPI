@@ -20,7 +20,7 @@ A comprehensive REST API for travel-related services including flight search, ho
 - **🔐 User Authentication** - JWT-based authentication with secure cookies
 - **✈️ Flight Search** - Real-time flight data using Amadeus API
 - **🏨 Hotel Search** - Hotel booking with Amadeus API integration
-- **🏖️ Weekend Getaways** - Find weekend destinations using free APIs
+- **🏖️ Popular Destinations** - Get 12 most visited Indian places with detailed information
 - **🎯 Travel Categories** - Categorized travel destinations (beach, mountain, city, etc.)
 - **🌍 Continents API** - Global country and city data
 - **📍 Location Services** - IP-based geolocation
@@ -32,7 +32,7 @@ A comprehensive REST API for travel-related services including flight search, ho
 - **Backend**: Node.js, Express.js
 - **Database**: MongoDB with Mongoose
 - **Authentication**: JWT with bcryptjs
-- **APIs**: Amadeus, OpenStreetMap, Wikipedia, OpenWeatherMap, Foursquare
+- **APIs**: Amadeus, Geoapify, OpenStreetMap, Wikipedia, OpenWeatherMap
 - **Security**: CORS, Rate Limiting, Input Validation
 - **Environment**: dotenv for configuration
 
@@ -63,6 +63,50 @@ A comprehensive REST API for travel-related services including flight search, ho
    # Production mode
    npm start
    ```
+
+## 🚂 Railway Deployment
+
+### **Deploy to Railway:**
+
+1. **Connect your GitHub repository to Railway**
+   - Go to [Railway.app](https://railway.app)
+   - Sign in with GitHub
+   - Click "New Project" → "Deploy from GitHub repo"
+   - Select your TravelAPI repository
+
+2. **Set Environment Variables in Railway:**
+   - Go to your project dashboard
+   - Click on "Variables" tab
+   - Add the following environment variables:
+
+   ```env
+   # Required Environment Variables
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/travelapi
+   JWT_SECRET=your-super-secret-jwt-key-here
+   AMADEUS_CLIENT_ID=your-amadeus-client-id
+   AMADEUS_CLIENT_SECRET=your-amadeus-client-secret
+   
+   # Optional Environment Variables
+   NODE_ENV=production
+   PORT=8080
+   RATE_LIMIT_MAX_REQUESTS=100
+   RATE_LIMIT_WINDOW_MS=900000
+   ```
+
+3. **Deploy:**
+   - Railway will automatically deploy your app
+   - Your API will be available at the provided Railway URL
+
+### **Important Notes for Railway:**
+- ✅ **Environment variables are loaded first** - Fixed in the code
+- ✅ **Amadeus client initializes lazily** - Prevents startup errors
+- ✅ **MongoDB Atlas recommended** - Use cloud database for production
+- ✅ **All API keys must be set** - Required for full functionality
+
+### **Troubleshooting Railway Deployment:**
+- **Missing Amadeus credentials error**: Ensure `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` are set in Railway variables
+- **Database connection issues**: Use MongoDB Atlas connection string for `MONGODB_URI`
+- **Port issues**: Railway automatically sets the `PORT` environment variable
 
 ## 🔧 Environment Setup
 
@@ -104,14 +148,13 @@ ALLOW_START_WITHOUT_DB=false
 - **Amadeus API**: [Sign up here](https://developers.amadeus.com/) for flight and hotel data
 
 #### **Optional APIs (Free tiers available):**
-- **Foursquare API**: [Sign up here](https://developer.foursquare.com/) (1000 requests/day)
+- **Geoapify API**: [Sign up here](https://www.geoapify.com/) (3000 requests/day free)
 - **OpenWeatherMap API**: [Sign up here](https://openweathermap.org/api) (1000 requests/day)
 
 #### **Free APIs (No keys required):**
 - OpenStreetMap Nominatim
 - Wikipedia API
 - REST Countries API
-- OpenTripMap API
 
 ## 📚 API Endpoints
 
@@ -323,73 +366,86 @@ Search for hotels.
 }
 ```
 
-### 🏖️ Weekend Getaways Endpoints
+### 🏖️ Popular Destinations Endpoints
 
 #### **GET** `/api/v1/weekend-getaways/search`
-Search for weekend getaways near a city.
+Get the 12 most visited Indian destinations with detailed information.
 
 **Query Parameters:**
-- `city` (required): City name (e.g., "Mumbai", "Delhi")
-- `radius` (optional): Search radius in km (default: 300)
-- `limit` (optional): Number of results (default: 10)
-- `weekendType` (optional): Type of getaway (default: "hill stations")
+- `category` (optional): Filter by destination category
+- `limit` (optional): Number of results (default: 12, max: 12)
 
-**Available Weekend Types:**
-- `hill stations` - Mountain destinations
+**Available Categories:**
+- `historical places` - Heritage sites and monuments
 - `beach destinations` - Coastal getaways
-- `historical places` - Heritage sites
-- `adventure spots` - Outdoor activities
+- `hill stations` - Mountain destinations
 - `religious places` - Sacred destinations
-- `wildlife sanctuaries` - Nature reserves
+- `adventure spots` - Outdoor activities
 
-**Example:**
+**Examples:**
 ```bash
-GET /api/v1/weekend-getaways/search?city=Mumbai&radius=300&weekendType=hill stations&limit=5
+# Get all 12 most visited places
+GET /api/v1/weekend-getaways/search
+
+# Filter by category
+GET /api/v1/weekend-getaways/search?category=historical places
+
+# Limit results
+GET /api/v1/weekend-getaways/search?limit=5
 ```
 
 **Response:**
 ```json
 {
   "searchParams": {
-    "city": "Mumbai",
-    "cityCoordinates": {
-      "latitude": 19.0760,
-      "longitude": 72.8777,
-      "displayName": "Mumbai, Maharashtra, India",
-      "country": "India"
-    },
-    "radius": 300,
-    "weekendType": "hill stations",
-    "limit": 5
+    "type": "most_visited_places",
+    "category": "all",
+    "limit": 12
   },
-  "weather": {
-    "temperature": 28.5,
-    "description": "clear sky",
-    "humidity": 65,
-    "windSpeed": 3.2
-  },
+  "weather": null,
   "results": {
-    "count": 4,
+    "count": 12,
     "destinations": [
       {
-        "id": "place_123",
-        "name": "Matheran Hill Station",
-        "description": "Matheran is a hill station and a municipal council...",
-        "weekendType": "hill stations",
-        "source": "opentripmap",
-        "region": "Maharashtra",
-        "highlights": ["Hill Station", "Scenic Views", "Toy Train"],
-        "budget": "₹2000-8000 per day",
-        "idealFor": ["Weekend Travelers", "Tourists", "Explorers"],
+        "id": "taj_mahal",
+        "name": "Taj Mahal",
+        "description": "Iconic white marble mausoleum and UNESCO World Heritage Site",
+        "category": "historical places",
+        "source": "sample",
+        "region": "Uttar Pradesh",
+        "highlights": ["UNESCO World Heritage", "Mughal Architecture", "Symbol of Love", "Marble Inlay Work"],
+        "budget": "₹2000-5000 per day",
+        "idealFor": ["History Lovers", "Couples", "Families", "Photographers"],
         "bestMonths": ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
-        "thingsToDo": ["Toy Train Ride", "Scenic Views", "Nature Walks", "Photography"],
-        "travelTime": "4-8 hours from major cities",
-        "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400",
-        "distanceFromCity": "85 km",
-        "wikipediaUrl": "https://en.wikipedia.org/wiki/Matheran",
+        "thingsToDo": ["Taj Mahal Visit", "Agra Fort Tour", "Fatehpur Sikri", "Local Cuisine"],
+        "travelTime": "3-4 hours from Delhi",
+        "image": "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400",
+        "visitorsPerYear": "7-8 million",
+        "wikipediaUrl": "https://en.wikipedia.org/wiki/Taj_Mahal",
         "coordinates": {
-          "latitude": 18.9878,
-          "longitude": 73.2658
+          "latitude": 27.1751,
+          "longitude": 78.0421
+        }
+      },
+      {
+        "id": "goa_beaches",
+        "name": "Goa",
+        "description": "Famous beach destination with Portuguese heritage and vibrant nightlife",
+        "category": "beach destinations",
+        "source": "sample",
+        "region": "Goa",
+        "highlights": ["Beaches", "Portuguese Heritage", "Nightlife", "Water Sports"],
+        "budget": "₹4000-12000 per day",
+        "idealFor": ["Party Lovers", "Couples", "Friends", "Beach Lovers"],
+        "bestMonths": ["Nov", "Dec", "Jan", "Feb", "Mar"],
+        "thingsToDo": ["Beach Hopping", "Water Sports", "Heritage Tours", "Nightlife"],
+        "travelTime": "2-3 hours from Mumbai",
+        "image": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400",
+        "visitorsPerYear": "6-7 million",
+        "wikipediaUrl": "https://en.wikipedia.org/wiki/Goa",
+        "coordinates": {
+          "latitude": 15.2993,
+          "longitude": 74.1240
         }
       }
     ]
@@ -670,8 +726,9 @@ npm run dev
 # Health check
 curl http://localhost:8080/api/v1
 
-# Test weekend getaways
-curl "http://localhost:8080/api/v1/weekend-getaways/search?city=Delhi&radius=300&limit=3"
+# Test popular destinations
+curl "http://localhost:8080/api/v1/weekend-getaways/search"
+curl "http://localhost:8080/api/v1/weekend-getaways/search?category=historical places&limit=5"
 
 # Test continents
 curl "http://localhost:8080/api/v1/continents/search?continent=asia&limit=3"
@@ -692,6 +749,15 @@ All responses are in JSON format with consistent structure.
 
 ### **Pagination:**
 Use `limit` parameter to control number of results returned.
+
+### **Popular Destinations Data:**
+The API includes 12 most visited Indian destinations with:
+- **Visitor Statistics** - Annual visitor numbers
+- **Budget Information** - Daily cost ranges
+- **Best Travel Months** - Optimal visiting periods
+- **Things to Do** - Specific activities and attractions
+- **Travel Information** - Distance and time from major cities
+- **Rich Details** - Highlights, ideal audience, and comprehensive descriptions
 
 ### **Filtering:**
 Most endpoints support filtering by:

@@ -1,9 +1,20 @@
 const Amadeus = require('amadeus');
 
-const amadeus = new Amadeus({
-    clientId: process.env.AMADEUS_CLIENT_ID,
-    clientSecret: process.env.AMADEUS_CLIENT_SECRET,
-});
+// Initialize Amadeus client lazily to ensure environment variables are loaded
+let amadeus = null;
+
+const getAmadeusClient = () => {
+    if (!amadeus) {
+        if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
+            throw new Error('Missing Amadeus credentials: AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set');
+        }
+        amadeus = new Amadeus({
+            clientId: process.env.AMADEUS_CLIENT_ID,
+            clientSecret: process.env.AMADEUS_CLIENT_SECRET,
+        });
+    }
+    return amadeus;
+};
 
 // POST /api/v1/hotels/search
 // Body params:
@@ -37,9 +48,8 @@ const searchHotels = async (req, res, next) => {
             limit,
         } = body;
 
-        if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
-            return res.status(500).json({ message: 'Missing Amadeus credentials' });
-        }
+        // Get Amadeus client (will throw if credentials are missing)
+        const amadeusClient = getAmadeusClient();
 
         if (!checkInDate || !checkOutDate) {
             return res.status(400).json({ message: 'checkInDate and checkOutDate are required' });
@@ -67,7 +77,7 @@ const searchHotels = async (req, res, next) => {
         if (chainCodes) params.chainCodes = String(chainCodes).toUpperCase();
 
         // Call Amadeus Hotel Offers Search
-        const response = await amadeus.shopping.hotelOffers.get(params);
+        const response = await amadeusClient.shopping.hotelOffers.get(params);
         const data = response.data || [];
 
         const ratingsSet = new Set((String(ratings || '') || '').split(',').map((r) => r.trim()).filter(Boolean));
@@ -149,6 +159,14 @@ const searchHotels = async (req, res, next) => {
 
         return res.json({ count: limited.length, hotels: limited });
     } catch (err) {
+        // Handle missing credentials error
+        if (err.message && err.message.includes('Missing Amadeus credentials')) {
+            return res.status(500).json({ 
+                message: 'Server configuration error: Missing Amadeus API credentials',
+                error: 'AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET environment variables must be set'
+            });
+        }
+        // Amadeus SDK errors often have response details
         if (err.response && err.response.result) {
             return res.status(err.code || 500).json(err.response.result);
         }

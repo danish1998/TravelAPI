@@ -1,5 +1,17 @@
 // Load environment variables FIRST
-require("dotenv").config();
+// Only load .env file in development, Railway provides env vars directly
+if (process.env.NODE_ENV !== 'production') {
+  require("dotenv").config();
+}
+
+// Debug environment variables
+console.log('=== Environment Variables Debug ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
+console.log('AMADEUS_CLIENT_ID:', process.env.AMADEUS_CLIENT_ID ? 'SET' : 'NOT SET');
+console.log('AMADEUS_CLIENT_SECRET:', process.env.AMADEUS_CLIENT_SECRET ? 'SET' : 'NOT SET');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
+console.log('================================');
 
 const express = require("express");
 const { requestLogger, addTimeStamp } = require("./middleware/customMiddleware");
@@ -40,6 +52,7 @@ const locationRouter = require("./routes/location-routes");
 const weekendGetawaysRouter = require("./routes/weekend-getaways-routes");
 const travelCategoriesRouter = require("./routes/travel-categories-routes");
 const continentsRouter = require("./routes/continents-routes");
+const placesRouter = require("./routes/places-routes");
 // app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/flights", flightsRouter);
 app.use("/api/v1/hotels", hotelsRouter);
@@ -47,6 +60,7 @@ app.use("/api/v1/location", locationRouter);
 app.use("/api/v1/weekend-getaways", weekendGetawaysRouter);
 app.use("/api/v1/travel-categories", travelCategoriesRouter);
 app.use("/api/v1/continents", continentsRouter);
+app.use("/api/v1/places", placesRouter);
 app.get("/api/v1", (req, res) => {
   res.json({ message: "Travel API v1 is running!" });
 });

@@ -631,7 +631,7 @@ const TRAVEL_CATEGORY_DESTINATIONS = {
             source: "sample",
             latitude: 30.0869,
             longitude: 78.2676,
-            image: "https://unsplash.com/photos/people-riding-on-yellow-kayak-on-river-during-daytime-M8cpBt6RSns",
+            image: "https://images.unsplash.com/photo-1627241129356-137242cf14f0?q=80&w=1834&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             region: "Uttarakhand",
             highlights: ["River Rafting", "Yoga", "Spiritual Experience", "Adventure Sports"],
             budget: "₹2000-6000 per day",

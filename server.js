@@ -33,8 +33,8 @@ app.use(addTimeStamp);
 app.use(configureCors());
 app.use(
   createBasicRateLimiter(
-    process.env.RATE_LIMIT_MAX_REQUESTS || 100,
-    process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000
+    process.env.RATE_LIMIT_MAX_REQUESTS || 1000,
+    process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 10000
   )
 ); // Rate limiting: 100 requests per 15 minutes
 app.use(express.json());

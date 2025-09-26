@@ -15,6 +15,107 @@ const FREE_APIS = {
     WEATHER: "https://api.openweathermap.org/data/2.5/weather"
 };
 
+// Hardcoded country images mapping
+const COUNTRY_IMAGES = {
+    // Europe
+    "France": "https://images.pexels.com/photos/2082103/pexels-photo-2082103.jpeg",
+    "Germany": "https://images.pexels.com/photos/161849/cologne-dom-night-architecture-161849.jpeg",
+    "Italy": "https://images.pexels.com/photos/2064827/pexels-photo-2064827.jpeg",
+    "Spain": "https://images.pexels.com/photos/3757144/pexels-photo-3757144.jpeg",
+    "United Kingdom": "https://images.pexels.com/photos/460672/pexels-photo-460672.jpeg",
+    "Netherlands": "https://images.pexels.com/photos/2031706/pexels-photo-2031706.jpeg",
+    "Belgium": "https://images.pexels.com/photos/208246/pexels-photo-208246.jpeg",
+    "Switzerland": "https://images.pexels.com/photos/773471/pexels-photo-773471.jpeg",
+    "Austria": "https://images.pexels.com/photos/1687122/pexels-photo-1687122.jpeg",
+    "Sweden": "https://images.pexels.com/photos/2377441/pexels-photo-2377441.jpeg",
+    "Norway": "https://images.pexels.com/photos/1933239/pexels-photo-1933239.jpeg",
+    "Denmark": "https://images.pexels.com/photos/415722/pexels-photo-415722.jpeg",
+    "Finland": "https://images.pexels.com/photos/2311602/pexels-photo-2311602.jpeg",
+    "Poland": "https://images.pexels.com/photos/46273/pexels-photo-46273.jpeg",
+    "Czech Republic": "https://images.pexels.com/photos/1269788/pexels-photo-1269788.jpeg",
+    "Hungary": "https://images.pexels.com/photos/53377/hungarian-parliament-night-budapest-hungary-53377.jpeg",
+    "Romania": "https://images.pexels.com/photos/775482/pexels-photo-775482.jpeg",
+    "Bulgaria": "https://cdn.pixabay.com/photo/2018/09/06/18/30/sofia-3658934_1280.jpg",
+    "Greece": "https://cdn.pixabay.com/photo/2022/10/05/05/40/sunset-7499759_1280.jpg",
+    "Portugal": "https://cdn.pixabay.com/photo/2023/09/22/11/10/lisbon-8268841_1280.jpg",
+    "Ireland": "https://cdn.pixabay.com/photo/2017/07/26/18/50/lighthouse-2542726_1280.jpg",
+    
+    // Asia
+    "China": "https://images.pexels.com/photos/745243/pexels-photo-745243.jpeg",
+    "Japan": "https://images.pexels.com/photos/402028/pexels-photo-402028.jpeg",
+    "South Korea": "https://images.pexels.com/photos/373290/pexels-photo-373290.jpeg",
+    "India": "https://images.pexels.com/photos/62348/pexels-photo-62348.jpeg",
+    "Thailand": "https://images.pexels.com/photos/208444/pexels-photo-208444.jpeg",
+    "Vietnam": "https://images.pexels.com/photos/2181111/pexels-photo-2181111.jpeg",
+    "Indonesia": "https://images.pexels.com/photos/2116719/pexels-photo-2116719.jpeg",
+    "Malaysia": "https://images.pexels.com/photos/22804/pexels-photo.jpg",
+    "Singapore": "https://images.pexels.com/photos/777059/pexels-photo-777059.jpeg",
+    "Philippines": "https://images.pexels.com/photos/9394657/pexels-photo-9394657.jpeg",
+    "Bangladesh": "https://images.pexels.com/photos/33434111/pexels-photo-33434111.jpeg",
+    "Pakistan": "https://cdn.pixabay.com/photo/2022/04/18/19/53/travel-7141487_1280.jpg",
+    "Sri Lanka": "https://images.pexels.com/photos/2403209/pexels-photo-2403209.jpeg",
+    "Nepal": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+    "Myanmar": "https://images.pexels.com/photos/2643896/pexels-photo-2643896.jpeg",
+    "Cambodia": "https://images.pexels.com/photos/3217663/pexels-photo-3217663.jpeg",
+    "Laos": "https://images.pexels.com/photos/924631/pexels-photo-924631.jpeg",
+    "Mongolia": "https://images.pexels.com/photos/5275365/pexels-photo-5275365.jpeg",
+    "Kazakhstan": "https://images.pexels.com/photos/2475746/pexels-photo-2475746.jpeg",
+    "Uzbekistan": "https://images.pexels.com/photos/19439197/pexels-photo-19439197.jpeg",
+    
+    // Middle East
+    "Saudi Arabia": "https://images.pexels.com/photos/17049069/pexels-photo-17049069.jpeg",
+    "United Arab Emirates": "https://images.pexels.com/photos/823696/pexels-photo-823696.jpeg",
+    "Israel": "https://images.pexels.com/photos/2087387/pexels-photo-2087387.jpeg",
+    "Turkey": "https://images.pexels.com/photos/2048865/pexels-photo-2048865.jpeg",
+    "Iran": "https://images.pexels.com/photos/3799176/pexels-photo-3799176.jpeg",
+    "Iraq": "https://images.pexels.com/photos/17340981/pexels-photo-17340981.jpeg",
+    "Jordan": "https://images.pexels.com/photos/5484805/pexels-photo-5484805.jpeg",
+    "Lebanon": "https://images.pexels.com/photos/3610377/pexels-photo-3610377.jpeg",
+    "Syria": "https://images.pexels.com/photos/29768588/pexels-photo-29768588.jpeg",
+    "Kuwait": "https://images.pexels.com/photos/1718259/pexels-photo-1718259.jpeg",
+    "Qatar": "https://images.pexels.com/photos/3069345/pexels-photo-3069345.jpeg",
+    "Bahrain": "https://images.pexels.com/photos/1438830/pexels-photo-1438830.jpeg",
+    "Oman": "https://images.pexels.com/photos/5035569/pexels-photo-5035569.jpeg",
+    "Yemen": "https://images.pexels.com/photos/29401958/pexels-photo-29401958.jpeg",
+    
+    // Africa
+    "Egypt": "https://images.pexels.com/photos/1369212/pexels-photo-1369212.jpeg",
+    "South Africa": "https://images.pexels.com/photos/51809/pexels-photo-51809.jpeg",
+    "Nigeria": "https://images.pexels.com/photos/3172830/pexels-photo-3172830.jpeg",
+    "Kenya": "https://images.pexels.com/photos/1670732/pexels-photo-1670732.jpeg",
+    "Morocco": "https://images.pexels.com/photos/3581916/pexels-photo-3581916.jpeg",
+    "Tunisia": "https://images.pexels.com/photos/891125/pexels-photo-891125.jpeg",
+    "Algeria": "https://images.pexels.com/photos/719771/pexels-photo-719771.jpeg",
+    "Ethiopia": "https://images.pexels.com/photos/33337903/pexels-photo-33337903.jpeg",
+    "Ghana": "https://images.pexels.com/photos/2787815/pexels-photo-2787815.jpeg",
+    "Tanzania": "https://images.pexels.com/photos/2862070/pexels-photo-2862070.jpeg",
+    "Uganda": "https://images.pexels.com/photos/2640454/pexels-photo-2640454.jpeg",
+    "Rwanda": "https://images.pexels.com/photos/19827348/pexels-photo-19827348.jpeg",
+    "Botswana": "https://images.pexels.com/photos/4003466/pexels-photo-4003466.jpeg",
+    "Namibia": "https://images.pexels.com/photos/80454/tree-desert-namibia-dead-vlei-80454.jpeg",
+    "Zimbabwe": "https://images.pexels.com/photos/23232512/pexels-photo-23232512.jpeg",
+    "Zambia": "https://images.pexels.com/photos/1109905/pexels-photo-1109905.jpeg",
+    "Senegal": "https://images.pexels.com/photos/16562982/pexels-photo-16562982.jpeg",
+    "Ivory Coast": "https://images.pexels.com/photos/7381784/pexels-photo-7381784.jpeg",
+    "Cameroon": "https://images.pexels.com/photos/17290990/pexels-photo-17290990.jpeg",
+    "Angola": "https://images.pexels.com/photos/2767923/pexels-photo-2767923.jpeg",
+    
+    // Oceania
+    "Australia": "https://images.pexels.com/photos/2193300/pexels-photo-2193300.jpeg",
+    "New Zealand": "https://images.pexels.com/photos/1260512/pexels-photo-1260512.jpeg",
+    "Fiji": "https://images.pexels.com/photos/25068627/pexels-photo-25068627.jpeg",
+    "Papua New Guinea": "https://images.pexels.com/photos/31235875/pexels-photo-31235875.jpeg",
+    "Solomon Islands": "https://images.pexels.com/photos/29643273/pexels-photo-29643273.jpeg",
+    "Vanuatu": "https://images.pexels.com/photos/9482126/pexels-photo-9482126.jpeg",
+    "Samoa": "https://images.pexels.com/photos/19844887/pexels-photo-19844887.jpeg",
+    "Tonga": "https://images.pexels.com/photos/4666750/pexels-photo-4666750.jpeg",
+    "Kiribati": "https://images.pexels.com/photos/8828452/pexels-photo-8828452.jpeg",
+    "Tuvalu": "https://cdn.pixabay.com/photo/2014/07/04/17/26/sea-384055_1280.jpg",
+    "Nauru": "https://cdn.pixabay.com/photo/2013/07/13/14/16/nauru-162369_1280.png",
+    "Palau": "https://cdn.pixabay.com/photo/2013/08/23/22/52/canal-175133_1280.jpg",
+    "Marshall Islands": "https://cdn.pixabay.com/photo/2015/11/27/03/26/marshall-islands-1064876_1280.jpg"
+};
+
 // Continent mappings with regions and countries
 const CONTINENT_MAPPINGS = {
     "europe": {
@@ -207,13 +308,15 @@ const searchByContinent = async (req, res, next) => {
         // Get countries information
         const countriesPromises = continentData.countries.slice(0, limitNum).map(async (countryName) => {
             const countryInfo = await getCountryInfo(countryName);
-            return countryInfo;
+            
+            // Add hardcoded image
+            return {
+                ...countryInfo,
+                image: COUNTRY_IMAGES[countryName] || countryInfo?.flag || 'https://via.placeholder.com/800x600/CCCCCC/ffffff?text=No+Image'
+            };
         });
 
         const countries = (await Promise.all(countriesPromises)).filter(Boolean);
-
-        // Get cities information
-
 
         // Get Wikipedia description for the continent
         const wikipediaInfo = await getWikipediaDescription(normalizedContinent);
@@ -243,7 +346,8 @@ const searchByContinent = async (req, res, next) => {
                         area: country.area,
                         currency: country.currency,
                         language: country.language,
-                        flag: country.flag
+                        image: country.image, // Hardcoded image
+                        flag: country.flag    // API flag
                     }))
                 }
             }
@@ -303,7 +407,12 @@ const getCountriesByContinent = async (req, res, next) => {
         // Get detailed country information
         const countriesPromises = continentData.countries.slice(0, limitNum).map(async (countryName) => {
             const countryInfo = await getCountryInfo(countryName);
-            return countryInfo;
+            
+            // Add hardcoded image
+            return {
+                ...countryInfo,
+                image: COUNTRY_IMAGES[countryName] || countryInfo?.flag || 'https://via.placeholder.com/800x600/CCCCCC/ffffff?text=No+Image'
+            };
         });
 
         const countries = (await Promise.all(countriesPromises)).filter(Boolean);
@@ -321,7 +430,8 @@ const getCountriesByContinent = async (req, res, next) => {
                 area: country.area,
                 currency: country.currency,
                 language: country.language,
-                flag: country.flag,
+                image: country.image, // Hardcoded image
+                flag: country.flag,   // API flag
                 continent: country.continent
             }))
         });

@@ -1099,6 +1099,18 @@ const searchByCategory = async (req, res, next) => {
     }
 };
 
+// Helper function to get category descriptions
+const getCategoryDescription = (category) => {
+    const descriptions = {
+        "beach escape": "Relaxing beach destinations with water activities and coastal experiences",
+        "mountain treks": "High-altitude trekking destinations with scenic trails and mountain views",
+        "city breaks": "Urban destinations perfect for short city getaways and metropolitan experiences",
+        "food and culture": "Cultural destinations known for their cuisine, heritage, and local traditions",
+        "adventure trips": "Thrilling destinations offering extreme sports and adventure activities"
+    };
+    return descriptions[category] || "Travel destinations for various experiences";
+};
+
 // GET /api/v1/travel-categories/categories
 // Returns all available categories
 const getAllCategories = async (req, res, next) => {
@@ -1176,17 +1188,6 @@ const getDestinationsByCategory = async (req, res, next) => {
     }
 };
 
-// Helper function to get category descriptions
-const getCategoryDescription = (category) => {
-    const descriptions = {
-        "beach escape": "Relaxing beach destinations with water activities and coastal experiences",
-        "mountain treks": "High-altitude trekking destinations with scenic trails and mountain views",
-        "city breaks": "Urban destinations perfect for short city getaways and metropolitan experiences",
-        "food and culture": "Cultural destinations known for their cuisine, heritage, and local traditions",
-        "adventure trips": "Thrilling destinations offering extreme sports and adventure activities"
-    };
-    return descriptions[category] || "Travel destinations for various experiences";
-};
 
 module.exports = { 
     searchByCategory, 

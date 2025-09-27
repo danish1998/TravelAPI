@@ -6,6 +6,7 @@ const configureCors = () => {
         origin:(origin, callback)=>{
             const allowedOrigins=[
                 "http://localhost:3000", //local dev
+                "https://exploreddd.netlify.app", // live site
                 "https://yourcustomdomain.com", // product domain
             ];
 

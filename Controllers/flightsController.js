@@ -1,207 +1,176 @@
-const Amadeus = require('amadeus');
+// controllers/flightsController.js
+const Amadeus = require("amadeus");
 
-// Initialize Amadeus client lazily to ensure environment variables are loaded
-let amadeus = null;
+// Initialize Amadeus client
+const amadeus = new Amadeus({
+  clientId: process.env.AMADEUS_CLIENT_ID,
+  clientSecret: process.env.AMADEUS_CLIENT_SECRET,
+});
 
-const getAmadeusClient = () => {
-    if (!amadeus) {
-        if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
-            throw new Error('Missing Amadeus credentials: AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set');
-        }
-        amadeus = new Amadeus({
-            clientId: process.env.AMADEUS_CLIENT_ID,
-            clientSecret: process.env.AMADEUS_CLIENT_SECRET,
+const searchFlights = async (req, res) => {
+  try {
+    const {
+      originLocationCode,
+      destinationLocationCode,
+      departureDate,
+      returnDate,
+      adults,
+      children,
+      infants,
+      travelClass,
+      includedAirlineCodes,
+      excludedAirlineCodes,
+      nonStop,
+      currencyCode,
+      maxPrice,
+      max,
+    } = req.query;
+
+    // Validate required parameters
+    if (!originLocationCode || !destinationLocationCode || !departureDate || !adults) {
+      return res.status(400).json({
+        success: false,
+        message: "originLocationCode, destinationLocationCode, departureDate, and adults are required",
+      });
+    }
+
+    // Validate adults parameter
+    const adultsCount = parseInt(adults, 10);
+    if (isNaN(adultsCount) || adultsCount < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "adults parameter must be at least 1",
+      });
+    }
+
+    // Validate children parameter
+    const childrenCount = children ? parseInt(children, 10) : 0;
+    if (children && (isNaN(childrenCount) || childrenCount < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: "children parameter must be greater than or equal to 0",
+      });
+    }
+
+    // Validate infants parameter
+    const infantsCount = infants ? parseInt(infants, 10) : 0;
+    if (infants && (isNaN(infantsCount) || infantsCount < 0)) {
+      return res.status(400).json({
+        success: false,
+        message: "infants parameter must be greater than or equal to 0",
+      });
+    }
+
+    // Validate total seated travelers (adults + children) <= 9
+    if (adultsCount + childrenCount > 9) {
+      return res.status(400).json({
+        success: false,
+        message: "Total number of seated travelers (adults + children) cannot exceed 9",
+      });
+    }
+
+    // Validate infants <= adults
+    if (infantsCount > adultsCount) {
+      return res.status(400).json({
+        success: false,
+        message: "Number of infants cannot exceed number of adults",
+      });
+    }
+
+    // Validate travelClass
+    const validTravelClasses = ["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"];
+    if (travelClass && !validTravelClasses.includes(travelClass.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "travelClass must be one of: ECONOMY, PREMIUM_ECONOMY, BUSINESS, FIRST",
+      });
+    }
+
+    // Validate that includedAirlineCodes and excludedAirlineCodes are not both present
+    if (includedAirlineCodes && excludedAirlineCodes) {
+      return res.status(400).json({
+        success: false,
+        message: "includedAirlineCodes and excludedAirlineCodes cannot be used together",
+      });
+    }
+
+    // Validate maxPrice
+    if (maxPrice) {
+      const maxPriceNum = parseInt(maxPrice, 10);
+      if (isNaN(maxPriceNum) || maxPriceNum < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "maxPrice must be a positive number with no decimals",
         });
+      }
     }
-    return amadeus;
-};
 
-// POST /api/v1/flights/search
-// Required body: origin, destination, departureDate (YYYY-MM-DD)
-// Optional body: returnDate, adults, children, infants, currencyCode, nonStop, maxPrice,
-//   travelClass (ECONOMY|PREMIUM_ECONOMY|BUSINESS|FIRST),
-//   includedAirlines (comma list), excludedAirlines (comma list),
-//   maxStops (per itinerary), sortBy (price|duration|departure), sortOrder (asc|desc), limit
-const searchFlights = async (req, res, next) => {
-    try {
-        const body = req.body || {};
-        const {
-            origin,
-            destination,
-            departureDate,
-            returnDate,
-            adults = 1,
-            children = 0,
-            infants = 0,
-            currencyCode,
-            nonStop,
-            maxPrice,
-            travelClass,
-            includedAirlines,
-            excludedAirlines,
-            maxStops,
-            sortBy,
-            sortOrder = 'asc',
-            limit,
-        } = body;
-
-        // Get Amadeus client (will throw if credentials are missing)
-        const amadeusClient = getAmadeusClient();
-        if (!origin || !destination || !departureDate) {
-            return res.status(400).json({ message: 'origin, destination, departureDate are required' });
-        }
-
-        const params = {
-            originLocationCode: String(origin).toUpperCase(),
-            destinationLocationCode: String(destination).toUpperCase(),
-            departureDate,
-            adults: String(adults),
-        };
-        if (returnDate) params.returnDate = returnDate;
-        if (currencyCode) params.currencyCode = String(currencyCode).toUpperCase();
-        if (typeof nonStop !== 'undefined') params.nonStop = String(nonStop) === 'true' || nonStop === true ? 'true' : 'false';
-        if (maxPrice) params.maxPrice = String(maxPrice);
-        if (travelClass) params.travelClass = String(travelClass).toUpperCase();
-        if (includedAirlines) params.includedAirlineCodes = String(includedAirlines).toUpperCase();
-        if (excludedAirlines) params.excludedAirlineCodes = String(excludedAirlines).toUpperCase();
-
-        // Passenger mix
-        const childrenCount = parseInt(String(children), 10);
-        const infantsCount = parseInt(String(infants), 10);
-        if (!Number.isNaN(childrenCount) && childrenCount > 0) params.children = String(childrenCount);
-        if (!Number.isNaN(infantsCount) && infantsCount > 0) params.infants = String(infantsCount);
-
-        const response = await amadeusClient.shopping.flightOffersSearch.get(params);
-        const data = response.data || [];
-
-        // Build unique carrier code set
-        const carrierSet = new Set();
-        for (const offer of data) {
-            for (const it of offer.itineraries || []) {
-                for (const s of it.segments || []) {
-                    if (s.carrierCode) carrierSet.add(s.carrierCode);
-                }
-            }
-        }
-        const carrierCodes = Array.from(carrierSet);
-
-        // Fetch airline names via Amadeus reference data (best-effort)
-        const codeToAirline = {};
-        if (carrierCodes.length > 0) {
-            try {
-                const ref = await amadeusClient.referenceData.airlines.get({ airlineCodes: carrierCodes.join(',') });
-                const list = ref.data || [];
-                for (const a of list) {
-                    if (a.iataCode) {
-                        codeToAirline[a.iataCode] = a.businessName || a.commonName || a.name || a.iataCode;
-                    }
-                }
-            } catch (e) {
-                // Ignore enrichment errors
-            }
-        }
-        const logoUrlFor = (iataCode) => iataCode ? `https://pics.avs.io/200/50/${iataCode}.png` : undefined;
-
-        // Helpers
-        const toMinutes = (isoDuration) => {
-            // PT#H#M
-            if (!isoDuration) return Infinity;
-            const h = /([0-9]+)H/.exec(isoDuration)?.[1];
-            const m = /([0-9]+)M/.exec(isoDuration)?.[1];
-            return (h ? parseInt(h, 10) * 60 : 0) + (m ? parseInt(m, 10) : 0);
-        };
-        const getItineraryStops = (itinerary) => {
-            const segs = itinerary?.segments || [];
-            return Math.max(0, segs.length - 1);
-        };
-        const getEarliestDeparture = (offer) => {
-            const firstSeg = offer?.itineraries?.[0]?.segments?.[0];
-            return firstSeg?.departure?.at ? new Date(firstSeg.departure.at).getTime() : Number.MAX_SAFE_INTEGER;
-        };
-        const getTotalDurationMinutes = (offer) => {
-            return (offer.itineraries || []).reduce((sum, it) => sum + toMinutes(it.duration), 0);
-        };
-
-        // Simplify
-        let simplified = data.map((offer) => ({
-            id: offer.id,
-            oneWay: !offer.itineraries || offer.itineraries.length === 1,
-            price: offer.price?.grandTotal ? Number(offer.price.grandTotal) : undefined,
-            currency: offer.price?.currency,
-            passengerMix: {
-                adults: Number(adults),
-                children: !Number.isNaN(childrenCount) ? Math.max(0, childrenCount) : 0,
-                infants: !Number.isNaN(infantsCount) ? Math.max(0, infantsCount) : 0,
-                travelClass: travelClass ? String(travelClass).toUpperCase() : undefined,
-            },
-            carrierCodes: Array.from(
-                new Set((offer.itineraries || []).flatMap((it) => (it.segments || []).map((s) => s.carrierCode)))
-            ),
-            carrierNames: Array.from(
-                new Set((offer.itineraries || []).flatMap((it) => (it.segments || []).map((s) => codeToAirline[s.carrierCode] || s.carrierCode)))
-            ),
-            primaryCarrierLogo: logoUrlFor(offer?.itineraries?.[0]?.segments?.[0]?.carrierCode),
-            totalDurationMin: getTotalDurationMinutes(offer),
-            earliestDepartureTs: getEarliestDeparture(offer),
-            itineraries: (offer.itineraries || []).map((it) => ({
-                duration: it.duration,
-                stops: getItineraryStops(it),
-                segments: it.segments?.map((s) => ({
-                    carrierCode: s.carrierCode,
-                    carrierName: codeToAirline[s.carrierCode] || s.carrierCode,
-                    carrierLogo: logoUrlFor(s.carrierCode),
-                    number: s.number,
-                    departure: s.departure,
-                    arrival: s.arrival,
-                    aircraft: s.aircraft,
-                    duration: s.duration,
-                    id: s.id,
-                })),
-            })),
-        }));
-
-        // Post-filtering
-        if (typeof maxStops !== 'undefined') {
-            const allowedStops = parseInt(String(maxStops), 10);
-            if (!Number.isNaN(allowedStops)) {
-                simplified = simplified.filter((o) => o.itineraries.every((it) => it.stops <= allowedStops));
-            }
-        }
-
-        // Sorting
-        if (sortBy === 'price') {
-            simplified.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
-        } else if (sortBy === 'duration') {
-            simplified.sort((a, b) => a.totalDurationMin - b.totalDurationMin);
-        } else if (sortBy === 'departure') {
-            simplified.sort((a, b) => a.earliestDepartureTs - b.earliestDepartureTs);
-        }
-        if (String(sortOrder).toLowerCase() === 'desc') simplified.reverse();
-
-        // Limit
-        let limited = simplified;
-        if (limit) {
-            const n = parseInt(String(limit), 10);
-            if (!Number.isNaN(n) && n > 0) limited = simplified.slice(0, n);
-        }
-
-        return res.json({ count: limited.length, offers: limited });
-    } catch (err) {
-        // Handle missing credentials error
-        if (err.message && err.message.includes('Missing Amadeus credentials')) {
-            return res.status(500).json({ 
-                message: 'Server configuration error: Missing Amadeus API credentials',
-                error: 'AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET environment variables must be set'
-            });
-        }
-        // Amadeus SDK errors often have response details
-        if (err.response && err.response.result) {
-            return res.status(err.code || 500).json(err.response.result);
-        }
-        next(err);
+    // Validate max parameter
+    if (max) {
+      const maxResults = parseInt(max, 10);
+      if (isNaN(maxResults) || maxResults < 1 || maxResults > 250) {
+        return res.status(400).json({
+          success: false,
+          message: "max parameter must be a number between 1 and 250",
+        });
+      }
     }
+
+    // Build search parameters
+    const searchParams = {
+      originLocationCode,
+      destinationLocationCode,
+      departureDate,
+      adults: adultsCount,
+    };
+
+    // Add optional parameters if provided
+    if (returnDate) searchParams.returnDate = returnDate;
+    if (children) searchParams.children = childrenCount;
+    if (infants) searchParams.infants = infantsCount;
+    if (travelClass) searchParams.travelClass = travelClass.toUpperCase();
+    if (includedAirlineCodes) searchParams.includedAirlineCodes = includedAirlineCodes;
+    if (excludedAirlineCodes) searchParams.excludedAirlineCodes = excludedAirlineCodes;
+    if (nonStop !== undefined) searchParams.nonStop = nonStop === "true" || nonStop === true;
+    if (currencyCode) searchParams.currencyCode = currencyCode;
+    if (maxPrice) searchParams.maxPrice = parseInt(maxPrice, 10);
+    if (max) searchParams.max = parseInt(max, 10);
+
+    // Search for flight offers
+    const response = await amadeus.shopping.flightOffersSearch.get(searchParams);
+
+    return res.status(200).json({
+      success: true,
+      message: "Flight offers retrieved successfully",
+      data: response.result.data,
+      dictionaries: response.result.dictionaries,
+      meta: response.result.meta,
+    });
+  } catch (error) {
+    console.error("Error searching flights:", error);
+
+    // Handle Amadeus API errors
+    if (error.response) {
+      const statusCode = error.response.statusCode || 500;
+      const errorMessage =
+        error.response.result?.errors?.[0]?.detail ||
+        error.response.description ||
+        "Amadeus API error";
+
+      return res.status(statusCode).json({
+        success: false,
+        message: `Amadeus API Error: ${errorMessage}`,
+        errors: error.response.result?.errors,
+      });
+    }
+
+    // Handle unexpected errors
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while searching flights",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
 };
 
 module.exports = { searchFlights };
-
-

@@ -28,6 +28,7 @@ const searchCities = async (req, res) => {
       });
     }
 
+
     // Use Amadeus SDK directly
     const response = await amadeus.referenceData.locations.cities.get({
       keyword,
@@ -41,6 +42,7 @@ const searchCities = async (req, res) => {
       message: "Airports retrieved successfully",
       included: response.result.included,
     });
+    
   } catch (error) {
     console.error("Error searching cities:", error);
 

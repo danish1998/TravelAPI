@@ -7,7 +7,8 @@ const configureCors = () => {
             const allowedOrigins=[
                 "http://localhost:3000", //local dev
                 "https://exploreddd.netlify.app", // live site
-                "https://yourcustomdomain.com", // product domain
+                "https://www.comfortmytrip.com/", // product domain
+                "https://comfortmytrip.com/", // product domain
             ];
 
             if(!origin || allowedOrigins.indexOf(origin) !== -1){

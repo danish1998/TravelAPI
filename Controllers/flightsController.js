@@ -173,4 +173,156 @@ const searchFlights = async (req, res) => {
   }
 };
 
-module.exports = { searchFlights };
+const searchFlightsTravelPayouts = async (req, res) => {
+  try {
+    const {
+      origin,
+      destination,
+      depart_date,
+      return_date,
+      adults = 1,
+      currency = 'INR',
+      token,
+      marker
+    } = req.query;
+
+    // Validate required parameters
+    if (!origin || !destination || !depart_date) {
+      return res.status(400).json({
+        success: false,
+        message: "origin, destination, and depart_date are required parameters",
+      });
+    }
+
+    // Validate adults parameter
+    const adultsCount = parseInt(adults, 10);
+    if (isNaN(adultsCount) || adultsCount < 1 || adultsCount > 9) {
+      return res.status(400).json({
+        success: false,
+        message: "adults parameter must be between 1 and 9",
+      });
+    }
+
+    // Validate currency
+    const validCurrencies = ['INR', 'USD', 'EUR', 'GBP', 'CAD', 'AUD'];
+    if (currency && !validCurrencies.includes(currency.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "currency must be one of: INR, USD, EUR, GBP, CAD, AUD",
+      });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(depart_date)) {
+      return res.status(400).json({
+        success: false,
+        message: "depart_date must be in YYYY-MM-DD format",
+      });
+    }
+
+    if (return_date && !dateRegex.test(return_date)) {
+      return res.status(400).json({
+        success: false,
+        message: "return_date must be in YYYY-MM-DD format",
+      });
+    }
+
+    // Validate that return_date is after depart_date
+    if (return_date && new Date(return_date) <= new Date(depart_date)) {
+      return res.status(400).json({
+        success: false,
+        message: "return_date must be after depart_date",
+      });
+    }
+
+    // Build TravelPayouts API URL
+    const baseUrl = 'https://api.travelpayouts.com/aviasales/v3/prices_for_dates';
+    const params = new URLSearchParams({
+      origin: origin.toUpperCase(),
+      destination: destination.toUpperCase(),
+      depart_date,
+      adults: adultsCount,
+      currency: currency.toUpperCase()
+    });
+
+    if (return_date) {
+      params.append('return_date', return_date);
+    }
+
+    if (token) {
+      params.append('token', token);
+    }
+
+    if (marker) {
+      params.append('marker', marker);
+    }
+
+    const apiUrl = `${baseUrl}?${params.toString()}`;
+
+    // Make request to TravelPayouts API
+    const fetch = require('node-fetch');
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`TravelPayouts API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Check if the API returned an error
+    if (!data.success) {
+      return res.status(400).json({
+        success: false,
+        message: "TravelPayouts API returned an error",
+        data: data
+      });
+    }
+
+    // Transform the data to match your API format
+    const transformedData = {
+      success: true,
+      message: "Flight search completed successfully",
+      data: {
+        flights: data.data || [],
+        currency: data.currency,
+        search_params: {
+          origin,
+          destination,
+          depart_date,
+          return_date,
+          adults: adultsCount,
+          currency: currency.toUpperCase()
+        }
+      },
+      meta: {
+        total_flights: data.data ? data.data.length : 0,
+        source: 'TravelPayouts',
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    return res.status(200).json(transformedData);
+
+  } catch (error) {
+    console.error("Error searching flights with TravelPayouts:", error);
+
+    // Handle fetch errors
+    if (error.message.includes('TravelPayouts API error')) {
+      return res.status(502).json({
+        success: false,
+        message: "External API error",
+        error: error.message,
+      });
+    }
+
+    // Handle unexpected errors
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while searching flights",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+module.exports = { searchFlights, searchFlightsTravelPayouts };

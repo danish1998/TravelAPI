@@ -6,6 +6,8 @@ const configureCors = () => {
         origin:(origin, callback)=>{
             const allowedOrigins=[
                 "http://localhost:3000", //local dev
+                "http://localhost:3001", //local dev
+                "http://localhost:3002", //local dev
                 "https://exploreddd.netlify.app", // live site
                 "https://www.comfortmytrip.com", // product domain
                 "https://comfortmytrip.com", // product domain

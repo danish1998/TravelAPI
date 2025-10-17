@@ -183,7 +183,8 @@ const searchFlightsTravelPayouts = async (req, res) => {
       adults = 1,
       currency = 'INR',
       token,
-      marker
+      marker,
+      limit = 30  // Add limit parameter with default value
     } = req.query;
 
     // Validate required parameters
@@ -236,47 +237,70 @@ const searchFlightsTravelPayouts = async (req, res) => {
       });
     }
 
-    // Build TravelPayouts API URL
-    const baseUrl = 'https://api.travelpayouts.com/aviasales/v3/prices_for_dates';
-    const params = new URLSearchParams({
-      origin: origin.toUpperCase(),
-      destination: destination.toUpperCase(),
-      depart_date,
-      adults: adultsCount,
-      currency: currency.toUpperCase()
-    });
-
-    if (return_date) {
-      params.append('return_date', return_date);
-    }
-
-    if (token) {
-      params.append('token', token);
-    }
-
-    if (marker) {
-      params.append('marker', marker);
-    }
-
-    const apiUrl = `${baseUrl}?${params.toString()}`;
-
-    // Make request to TravelPayouts API
     const fetch = require('node-fetch');
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`TravelPayouts API error: ${response.status} ${response.statusText}`);
-    }
+    const baseUrl = 'https://api.travelpayouts.com/aviasales/v3/prices_for_dates';
 
-    const data = await response.json();
-
-    // Check if the API returned an error
-    if (!data.success) {
-      return res.status(400).json({
-        success: false,
-        message: "TravelPayouts API returned an error",
-        data: data
+    // Helper function to build API URL
+    const buildApiUrl = (orig, dest, date) => {
+      const params = new URLSearchParams({
+        origin: orig.toUpperCase(),
+        destination: dest.toUpperCase(),
+        departure_at: date,  // Changed from depart_date to departure_at
+        unique: false,
+        sorting: 'price',
+        direct: false,
+        cy: currency.toUpperCase(),
+        limit: parseInt(limit) || 30,  // Use limit from query or default to 30
       });
+
+      if (token) {
+        params.append('token', token);
+      }
+
+      if (marker) {
+        params.append('marker', marker);
+      }
+
+      return `${baseUrl}?${params.toString()}`;
+    };
+
+    // Fetch outbound flights
+    const outboundUrl = buildApiUrl(origin, destination, depart_date);
+    let outboundFlights = [];
+    let returnFlights = [];
+
+    // Make API calls
+    if (return_date) {
+      // Round-trip: fetch both outbound and return flights
+      const [outboundResponse, returnResponse] = await Promise.all([
+        fetch(outboundUrl),
+        fetch(buildApiUrl(destination, origin, return_date)) // Swap origin/destination for return
+      ]);
+
+      if (!outboundResponse.ok) {
+        throw new Error(`TravelPayouts API error (outbound): ${outboundResponse.status} ${outboundResponse.statusText}`);
+      }
+
+      if (!returnResponse.ok) {
+        throw new Error(`TravelPayouts API error (return): ${returnResponse.status} ${returnResponse.statusText}`);
+      }
+
+      const outboundData = await outboundResponse.json();
+      const returnData = await returnResponse.json();
+
+      outboundFlights = outboundData.data || [];
+      returnFlights = returnData.data || [];
+
+    } else {
+      // One-way: fetch only outbound flights
+      const outboundResponse = await fetch(outboundUrl);
+
+      if (!outboundResponse.ok) {
+        throw new Error(`TravelPayouts API error: ${outboundResponse.status} ${outboundResponse.statusText}`);
+      }
+
+      const outboundData = await outboundResponse.json();
+      outboundFlights = outboundData.data || [];
     }
 
     // Transform the data to match your API format
@@ -284,19 +308,22 @@ const searchFlightsTravelPayouts = async (req, res) => {
       success: true,
       message: "Flight search completed successfully",
       data: {
-        flights: data.data || [],
-        currency: data.currency,
+        trip_type: return_date ? 'round-trip' : 'one-way',
+        outbound_flights: outboundFlights,
+        return_flights: return_date ? returnFlights : null,
+        currency: currency.toUpperCase(),
         search_params: {
-          origin,
-          destination,
+          origin: origin.toUpperCase(),
+          destination: destination.toUpperCase(),
           depart_date,
-          return_date,
+          return_date: return_date || null,
           adults: adultsCount,
           currency: currency.toUpperCase()
         }
       },
       meta: {
-        total_flights: data.data ? data.data.length : 0,
+        total_outbound_flights: outboundFlights.length,
+        total_return_flights: return_date ? returnFlights.length : 0,
         source: 'TravelPayouts',
         timestamp: new Date().toISOString()
       }

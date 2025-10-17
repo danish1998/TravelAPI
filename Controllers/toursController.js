@@ -8,6 +8,46 @@ const amadeus = new Amadeus({
   clientSecret: process.env.AMADEUS_CLIENT_SECRET,
 });
 
+// Token caching variables
+let cachedToken = null;
+let tokenExpiry = null;
+
+// Helper function to get access token (with caching)
+const getAccessToken = async () => {
+  // Return cached token if still valid
+  if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
+    console.log('Using cached access token');
+    return cachedToken;
+  }
+
+  try {
+    console.log('Fetching new access token...');
+    const tokenResponse = await axios.post(
+      'https://test.api.amadeus.com/v1/security/oauth2/token',
+      new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: process.env.AMADEUS_CLIENT_ID,
+        client_secret: process.env.AMADEUS_CLIENT_SECRET,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    cachedToken = tokenResponse.data.access_token;
+    // Set expiry to 25 minutes to be safe (tokens expire in ~30 min)
+    tokenExpiry = Date.now() + (25 * 60 * 1000);
+    
+    console.log('New access token obtained and cached');
+    return cachedToken;
+  } catch (error) {
+    console.error('Error getting access token:', error.message);
+    throw error;
+  }
+};
+
 const searchActivities = async (req, res) => {
   try {
     const { 
@@ -147,16 +187,20 @@ const getActivityById = async (req, res) => {
       });
     }
 
-    // Use direct HTTP request to get specific activity details
-    // The correct endpoint is /v1/shopping/activities/{id}
-    const response = await axios.get(`https://test.api.amadeus.com/v1/shopping/activities/${activityId}`, {
-      headers: {
-        'Authorization': `Bearer nFrsM5KoCEb7trOnoc2ThIOeugS8`,
-        'Content-Type': 'application/json'
-      }
-    });
+    // Get access token (cached or new)
+    const accessToken = await getAccessToken();
 
-    // Return the response data directly from Amadeus API
+    // Get activity details using direct API call
+    const response = await axios.get(
+      `https://test.api.amadeus.com/v1/shopping/activities/${activityId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    // Return the response data in the same format as searchActivities
     return res.status(200).json({
       success: true,
       message: "Activity details retrieved successfully",
@@ -164,8 +208,24 @@ const getActivityById = async (req, res) => {
     });
     
   } catch (error) {
-    console.error("Error getting activity details:", error);
-    console.error("Error stack:", error.stack);
+    console.error("Error getting activity details:", error.message);
+    
+    // Handle API errors
+    if (error.response) {
+      const statusCode = error.response.status;
+      const errorMessage =
+        error.response.data?.errors?.[0]?.detail ||
+        error.response.data?.error_description ||
+        "API error";
+
+      console.error("API Error Details:", error.response.data);
+
+      return res.status(statusCode).json({
+        success: false,
+        message: `Amadeus API Error: ${errorMessage}`,
+        error: error.response.data,
+      });
+    }
 
     // Handle unexpected errors
     return res.status(500).json({

@@ -9,7 +9,13 @@ const amadeus = new Amadeus({
 
 const searchCities = async (req, res) => {
   try {
-    const { keyword, max = 10, include = "AIRPORTS" } = req.query;
+    const { 
+      keyword, 
+      limit = 10, 
+      offset = 0, 
+      sort = "analytics.travelers.score",
+      view = "FULL" 
+    } = req.query;
 
     // Validate required parameters
     if (!keyword) {
@@ -19,32 +25,43 @@ const searchCities = async (req, res) => {
       });
     }
 
-    // Validate max parameter
-    const maxResults = parseInt(max, 10);
-    if (isNaN(maxResults) || maxResults < 1 || maxResults > 20) {
+    // Validate limit parameter
+    const pageLimit = parseInt(limit, 10);
+    if (isNaN(pageLimit) || pageLimit < 1 || pageLimit > 100) {
       return res.status(400).json({
         success: false,
-        message: "Max parameter must be a number between 1 and 20",
+        message: "Limit parameter must be a number between 1 and 100",
       });
     }
 
+    // Validate offset parameter
+    const pageOffset = parseInt(offset, 10);
+    if (isNaN(pageOffset) || pageOffset < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Offset parameter must be a non-negative number",
+      });
+    }
 
-    // Use Amadeus SDK directly
-    const response = await amadeus.referenceData.locations.cities.get({
+    // Use Amadeus SDK to call the locations API with subType=AIRPORT
+    const response = await amadeus.referenceData.locations.get({
+      subType: "AIRPORT",
       keyword,
-      max: maxResults,
-      include,
+      "page[limit]": pageLimit,
+      "page[offset]": pageOffset,
+      sort,
+      view,
     });
 
-    // Return exactly like Amadeus API Explorer
+    // Return the response data directly from Amadeus API
     return res.status(200).json({
       success: true,
       message: "Airports retrieved successfully",
-      included: response.result.included,
+      data: response.result,
     });
     
   } catch (error) {
-    console.error("Error searching cities:", error);
+    console.error("Error searching airports:", error);
 
     // Handle Amadeus API errors
     if (error.response) {
@@ -64,7 +81,7 @@ const searchCities = async (req, res) => {
     // Handle unexpected errors
     return res.status(500).json({
       success: false,
-      message: "Internal server error while searching cities",
+      message: "Internal server error while searching airports",
       error: process.env.NODE_ENV === "development" ? error.message : "Something went wrong",
     });
   }

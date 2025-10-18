@@ -11,6 +11,7 @@ console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
 console.log('AMADEUS_CLIENT_ID:', process.env.AMADEUS_CLIENT_ID ? 'SET' : 'NOT SET');
 console.log('AMADEUS_CLIENT_SECRET:', process.env.AMADEUS_CLIENT_SECRET ? 'SET' : 'NOT SET');
 console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
+console.log('VIATOR_API_KEY:', process.env.VIATOR_API_KEY ? 'SET' : 'NOT SET');
 console.log('================================');
 
 const express = require("express");
@@ -51,12 +52,14 @@ const hotelsRouter = require("./routes/hotels-routes");
 const locationRouter = require("./routes/location-routes");
 const cityRouter = require("./routes/cities-routes");
 const toursRouter = require("./routes/tours-routes");
+const viatorRouter = require("./routes/viator-routes");
 // app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/flights", flightsRouter);
 app.use("/api/v1/hotels", hotelsRouter);
 app.use("/api/v1/location", locationRouter);
 app.use("/api/v1/cities", cityRouter);
 app.use("/api/v1/tours", toursRouter);
+app.use("/api/v1/viator", viatorRouter);
 app.get("/api/v1", (req, res) => {
   res.json({ message: "Travel API v1 is running!" });
 });

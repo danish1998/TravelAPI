@@ -121,31 +121,6 @@ class ViatorService {
     return await this.makeRequest('/search/freetext', searchParams, 'POST');
   }
 
-  // Search attractions by destination ID
-  async searchAttractionsByDestination(destinationId, sorting = {}, pagination = {}) {
-    const searchParams = {
-      destinationId: parseInt(destinationId)
-    };
-
-    // Add sorting if provided
-    if (sorting && Object.keys(sorting).length > 0) {
-      searchParams.sorting = sorting;
-    }
-
-    // Add pagination if provided
-    if (pagination && Object.keys(pagination).length > 0) {
-      searchParams.pagination = pagination;
-    } else {
-      // Default pagination
-      searchParams.pagination = {
-        offset: 0,
-        limit: 20
-      };
-    }
-
-    return await this.makeRequest('/attractions/search', searchParams, 'POST');
-  }
-
   // Search multiple types at once using freetext search
   async searchMultiple(searchTerm, searchTypes = ['PRODUCTS', 'ATTRACTIONS', 'DESTINATIONS'], topX = 20, currencyCode = 'USD', sortBy = 'TRAVELER_RATING') {
     const searchParams = {

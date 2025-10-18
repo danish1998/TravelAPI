@@ -295,6 +295,67 @@ const searchAttractionsOnly = async (req, res) => {
   }
 };
 
+// Search attractions by destination ID (POST)
+const searchAttractionsByDestination = async (req, res) => {
+  try {
+    const { destinationId, sorting, pagination } = req.body;
+
+    // Validate required parameters
+    if (!destinationId) {
+      return res.status(400).json({
+        success: false,
+        message: "destinationId is required in request body",
+        example: {
+          "destinationId": 479,
+          "sorting": {
+            "sortBy": "TRAVELER_RATING"
+          },
+          "pagination": {
+            "offset": 0,
+            "limit": 20
+          }
+        }
+      });
+    }
+
+    // Validate destinationId is a number
+    if (isNaN(destinationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "destinationId must be a valid number"
+      });
+    }
+
+    const result = await viatorService.searchAttractionsByDestination(destinationId, sorting, pagination);
+
+    res.status(200).json({
+      success: true,
+      message: "Attractions retrieved successfully",
+      data: result
+    });
+
+  } catch (error) {
+    console.error("Error searching attractions by destination:", error);
+    
+    if (error.response) {
+      const statusCode = error.response.status;
+      const errorMessage = error.response.data?.message || "Viator API error";
+      
+      return res.status(statusCode).json({
+        success: false,
+        message: `Viator API Error: ${errorMessage}`,
+        error: error.response.data
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while searching attractions by destination",
+      error: process.env.NODE_ENV === "development" ? error.message : "Something went wrong"
+    });
+  }
+};
+
 // Search multiple types
 const searchMultiple = async (req, res) => {
   try {
@@ -483,6 +544,7 @@ module.exports = {
   getTourReviews,
   searchDestinations,
   searchAttractionsOnly,
+  searchAttractionsByDestination,
   searchMultiple,
   getDestinationDetails,
   getCategories,

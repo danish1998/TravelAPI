@@ -1,4 +1,4 @@
-// services/viatorService-final.js
+// services/viatorService-fixed.js
 const axios = require('axios');
 
 class ViatorService {
@@ -31,7 +31,7 @@ class ViatorService {
       }
 
       console.log(`Making ${method} request to: ${this.apiURL}${endpoint}`);
-      console.log('Request params:', JSON.stringify(params, null, 2));
+      console.log('Request params:', params);
 
       const response = await axios(config);
       return response.data;
@@ -87,15 +87,11 @@ class ViatorService {
   async searchDestinations(searchTerm, topX = 10, currencyCode = 'USD') {
     const searchParams = {
       searchTerm,
-      searchTypes: [
-        {
-          searchType: 'DESTINATIONS',
-          pagination: {
-            offset: 0,
-            limit: topX
-          }
-        }
-      ],
+      searchTypes: ['DESTINATIONS'],
+      pagination: {
+        offset: 0,
+        limit: topX
+      },
       currency: currencyCode
     };
 
@@ -106,66 +102,31 @@ class ViatorService {
   async searchAttractionsOnly(searchTerm, topX = 20, currencyCode = 'USD') {
     const searchParams = {
       searchTerm,
-      searchTypes: [
-        {
-          searchType: 'ATTRACTIONS',
-          pagination: {
-            offset: 0,
-            limit: topX
-          }
-        }
-      ],
+      searchTypes: ['ATTRACTIONS'],
+      pagination: {
+        offset: 0,
+        limit: topX
+      },
       currency: currencyCode
     };
 
     return await this.makeRequest('/search/freetext', searchParams, 'POST');
   }
 
-  // Search attractions by destination ID
-  async searchAttractionsByDestination(destinationId, sorting = {}, pagination = {}) {
-    const searchParams = {
-      destinationId: parseInt(destinationId)
-    };
-
-    // Add sorting if provided
-    if (sorting && Object.keys(sorting).length > 0) {
-      searchParams.sorting = sorting;
-    }
-
-    // Add pagination if provided
-    if (pagination && Object.keys(pagination).length > 0) {
-      searchParams.pagination = pagination;
-    } else {
-      // Default pagination
-      searchParams.pagination = {
-        offset: 0,
-        limit: 20
-      };
-    }
-
-    return await this.makeRequest('/attractions/search', searchParams, 'POST');
-  }
-
   // Search multiple types at once using freetext search
   async searchMultiple(searchTerm, searchTypes = ['PRODUCTS', 'ATTRACTIONS', 'DESTINATIONS'], topX = 20, currencyCode = 'USD', sortBy = 'TRAVELER_RATING') {
     const searchParams = {
       searchTerm,
-      searchTypes: searchTypes.map(type => ({
-        searchType: type,
-        pagination: {
-          offset: 0,
-          limit: topX
-        }
-      })),
-      currency: currencyCode
-    };
-
-    // Add sorting if provided
-    if (sortBy) {
-      searchParams.productSorting = {
+      searchTypes,
+      pagination: {
+        offset: 0,
+        limit: topX
+      },
+      currency: currencyCode,
+      sorting: {
         sortBy: sortBy
-      };
-    }
+      }
+    };
 
     return await this.makeRequest('/search/freetext', searchParams, 'POST');
   }
@@ -199,8 +160,9 @@ class ViatorService {
     return await this.makeRequest('/destinations');
   }
 
-  // Get categories (mock data since this endpoint doesn't exist in official API)
+  // Get categories (this endpoint doesn't exist in the official API, using mock)
   async getCategories() {
+    // Since /categories is not in the official API list, return mock data
     return {
       data: [
         { id: 1, name: 'Sightseeing Tours', description: 'City tours and sightseeing' },
@@ -212,8 +174,9 @@ class ViatorService {
     };
   }
 
-  // Get subcategories (mock data since this endpoint doesn't exist in official API)
+  // Get subcategories (this endpoint doesn't exist in the official API, using mock)
   async getSubcategories(categoryId) {
+    // Since /categories/{id}/subcategories is not in the official API list, return mock data
     const subcategories = {
       1: [
         { id: 11, name: 'City Walking Tours', parentId: 1 },

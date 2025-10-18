@@ -7,6 +7,7 @@ const {
   getTourReviews,
   searchDestinations,
   searchAttractionsOnly,
+  searchAttractionsByDestination,
   searchMultiple,
   getDestinationDetails,
   getCategories,
@@ -27,6 +28,10 @@ router.get("/destinations/search", asyncHandler(searchDestinations));
 // Search for attractions only
 // GET /api/v1/viator/attractions/search?searchTerm=eiffel tower
 router.get("/attractions/search", asyncHandler(searchAttractionsOnly));
+
+// Search for attractions by destination ID (POST)
+// POST /api/v1/viator/attractions/search
+router.post("/attractions/search", asyncHandler(searchAttractionsByDestination));
 
 // Search multiple types at once
 // GET /api/v1/viator/search/multiple?searchTerm=london&searchTypes=PRODUCTS,ATTRACTIONS

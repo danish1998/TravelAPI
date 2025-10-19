@@ -9,6 +9,7 @@ const {
   searchAttractionsOnly,
   searchAttractionsByDestination,
   searchMultiple,
+  getAttractionDetails,
   getDestinationDetails,
   getCategories,
   getSubcategories
@@ -48,6 +49,10 @@ router.get("/tours/:productCode/photos", asyncHandler(getTourPhotos));
 // Get tour reviews
 // GET /api/v1/viator/tours/:productCode/reviews?topX=1-10
 router.get("/tours/:productCode/reviews", asyncHandler(getTourReviews));
+
+// Get attraction details by ID
+// GET /api/v1/viator/attractions/:attractionId
+router.get("/attractions/:attractionId", asyncHandler(getAttractionDetails));
 
 // Get destination details
 // GET /api/v1/viator/destinations/:destId

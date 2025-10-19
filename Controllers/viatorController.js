@@ -361,8 +361,8 @@ const searchMultiple = async (req, res) => {
   try {
     const { 
       searchTerm, 
-      searchTypes = 'PRODUCTS,ATTRACTIONS,DESTINATIONS', 
-      topX = 20, 
+      page = 1, 
+      limit = 20, 
       currencyCode = 'INR',
       sortBy = 'TRAVELER_RATING'
     } = req.query;
@@ -371,22 +371,116 @@ const searchMultiple = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Search term is required",
-        example: "/api/v1/viator/search/multiple?searchTerm=london"
+        example: "/api/v1/viator/search/multiple?searchTerm=delhi&page=1&limit=20"
+      });
+    }
+
+    // Validate page and limit parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    console.log(`📊 Controller received: page=${page}, limit=${limit}, pageNum=${pageNum}, limitNum=${limitNum}`);
+
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Page must be a positive integer"
+      });
+    }
+
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Limit must be a positive integer between 1 and 100"
       });
     }
 
     const result = await viatorService.searchMultiple(
       searchTerm, 
-      searchTypes.split(','), 
-      topX, 
+      pageNum, 
+      limitNum, 
       currencyCode, 
       sortBy
     );
 
+    console.log(`📥 Controller received result:`, {
+      hasData: !!result,
+      dataKeys: result ? Object.keys(result) : [],
+      productsCount: result?.products?.length || 0,
+      attractionsCount: result?.attractions?.length || 0,
+      destinationsCount: result?.destinations?.length || 0
+    });
+
+    // Calculate total results and pagination info from the actual response
+    const totalProducts = result.products?.totalCount || 0;
+    const totalAttractions = result.attractions?.totalCount || 0;
+    const totalDestinations = result.destinations?.totalCount || 0;
+    const totalResults = totalProducts + totalAttractions + totalDestinations;
+    
+    console.log(`📊 Total counts: Products=${totalProducts}, Attractions=${totalAttractions}, Destinations=${totalDestinations}, Total=${totalResults}`);
+    console.log(`📊 Raw result structure:`, {
+      hasProducts: !!result.products,
+      hasAttractions: !!result.attractions,
+      hasDestinations: !!result.destinations,
+      productsTotalCount: result.products?.totalCount,
+      attractionsTotalCount: result.attractions?.totalCount,
+      destinationsTotalCount: result.destinations?.totalCount
+    });
+    
+    // Debug: Check if values are being calculated correctly
+    console.log(`🔍 Debug calculation: ${totalProducts} + ${totalAttractions} + ${totalDestinations} = ${totalResults}`);
+
+    // Apply pagination to the results manually if the API doesn't support it
+    let paginatedResult = { ...result };
+    
+    // Calculate how many items per type based on the limit
+    const itemsPerType = Math.ceil(limitNum / 3); // Distribute limit across 3 types
+    
+    if (result.products?.results) {
+      const startIndex = (pageNum - 1) * itemsPerType;
+      const endIndex = startIndex + itemsPerType;
+      paginatedResult.products = {
+        ...result.products,
+        results: result.products.results.slice(startIndex, endIndex)
+      };
+      console.log(`🔍 Products pagination: page=${pageNum}, limit=${limitNum}, itemsPerType=${itemsPerType}, startIndex=${startIndex}, endIndex=${endIndex}, results=${result.products.results.length}`);
+    }
+    
+    if (result.attractions?.results) {
+      const startIndex = (pageNum - 1) * itemsPerType;
+      const endIndex = startIndex + itemsPerType;
+      paginatedResult.attractions = {
+        ...result.attractions,
+        results: result.attractions.results.slice(startIndex, endIndex)
+      };
+      console.log(`🔍 Attractions pagination: page=${pageNum}, limit=${limitNum}, itemsPerType=${itemsPerType}, startIndex=${startIndex}, endIndex=${endIndex}, results=${result.attractions.results.length}`);
+    }
+    
+    if (result.destinations?.results) {
+      const startIndex = (pageNum - 1) * itemsPerType;
+      const endIndex = startIndex + itemsPerType;
+      paginatedResult.destinations = {
+        ...result.destinations,
+        results: result.destinations.results.slice(startIndex, endIndex)
+      };
+      console.log(`🔍 Destinations pagination: page=${pageNum}, limit=${limitNum}, itemsPerType=${itemsPerType}, startIndex=${startIndex}, endIndex=${endIndex}, results=${result.destinations.results.length}`);
+    }
+
     res.status(200).json({
       success: true,
       message: "Search results retrieved successfully",
-      data: result
+      data: paginatedResult,
+      pagination: {
+        currentPage: pageNum,
+        limit: limitNum,
+        totalResults: totalResults,
+        totalPages: Math.ceil(totalResults / limitNum),
+        breakdown: {
+          products: totalProducts,
+          attractions: totalAttractions,
+          destinations: totalDestinations
+        }
+      }
     });
 
   } catch (error) {
@@ -406,6 +500,57 @@ const searchMultiple = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error while searching",
+      error: process.env.NODE_ENV === "development" ? error.message : "Something went wrong"
+    });
+  }
+};
+
+// Get attraction details by ID
+const getAttractionDetails = async (req, res) => {
+  try {
+    const { attractionId } = req.params;
+
+    if (!attractionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Attraction ID is required",
+        example: "/api/v1/viator/attractions/590"
+      });
+    }
+
+    // Validate attractionId is a number
+    if (isNaN(attractionId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Attraction ID must be a valid number"
+      });
+    }
+
+    const result = await viatorService.getAttractionDetails(attractionId);
+
+    res.status(200).json({
+      success: true,
+      message: "Attraction details retrieved successfully",
+      data: result
+    });
+
+  } catch (error) {
+    console.error("Error getting attraction details:", error);
+    
+    if (error.response) {
+      const statusCode = error.response.status;
+      const errorMessage = error.response.data?.message || "Viator API error";
+      
+      return res.status(statusCode).json({
+        success: false,
+        message: `Viator API Error: ${errorMessage}`,
+        error: error.response.data
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while getting attraction details",
       error: process.env.NODE_ENV === "development" ? error.message : "Something went wrong"
     });
   }
@@ -546,6 +691,7 @@ module.exports = {
   searchAttractionsOnly,
   searchAttractionsByDestination,
   searchMultiple,
+  getAttractionDetails,
   getDestinationDetails,
   getCategories,
   getSubcategories

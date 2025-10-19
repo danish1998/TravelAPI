@@ -11,7 +11,7 @@ const searchTours = async (req, res) => {
       topX = 20,
       sortBy = 'TRAVELER_RATING',
       searchTypes = 'PRODUCTS',
-      currencyCode = 'USD'
+      currencyCode = 'INR'
     } = req.query;
 
     // Validate required parameters
@@ -363,7 +363,7 @@ const searchMultiple = async (req, res) => {
       searchTerm, 
       searchTypes = 'PRODUCTS,ATTRACTIONS,DESTINATIONS', 
       topX = 20, 
-      currencyCode = 'USD',
+      currencyCode = 'INR',
       sortBy = 'TRAVELER_RATING'
     } = req.query;
 

@@ -49,7 +49,7 @@ class ViatorService {
       startDate,
       endDate,
       sortBy = 'TRAVELER_RATING',
-      currencyCode = 'USD',
+      currencyCode = 'INR',
       destinationId = '482' // Default to Paris
     } = params;
 
@@ -84,7 +84,7 @@ class ViatorService {
   }
 
   // Search for destinations using freetext search
-  async searchDestinations(searchTerm, topX = 10, currencyCode = 'USD') {
+  async searchDestinations(searchTerm, topX = 10, currencyCode = 'INR') {
     const searchParams = {
       searchTerm,
       searchTypes: [
@@ -103,7 +103,7 @@ class ViatorService {
   }
 
   // Search for attractions using freetext search
-  async searchAttractionsOnly(searchTerm, topX = 20, currencyCode = 'USD') {
+  async searchAttractionsOnly(searchTerm, topX = 20, currencyCode = 'INR') {
     const searchParams = {
       searchTerm,
       searchTypes: [
@@ -147,7 +147,7 @@ class ViatorService {
   }
 
   // Search multiple types at once using freetext search
-  async searchMultiple(searchTerm, searchTypes = ['PRODUCTS', 'ATTRACTIONS', 'DESTINATIONS'], topX = 20, currencyCode = 'USD', sortBy = 'TRAVELER_RATING') {
+  async searchMultiple(searchTerm, searchTypes = ['PRODUCTS', 'ATTRACTIONS', 'DESTINATIONS'], topX = 20, currencyCode = 'INR', sortBy = 'TRAVELER_RATING') {
     const searchParams = {
       searchTerm,
       searchTypes: searchTypes.map(type => ({
@@ -173,7 +173,7 @@ class ViatorService {
   // Get product details by ID
   async getProductDetails(productCode) {
     return await this.makeRequest(`/products/${productCode}`, {
-      currencyCode: 'USD'
+      currencyCode: 'INR'
     });
   }
 

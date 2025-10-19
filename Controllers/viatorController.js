@@ -361,8 +361,8 @@ const searchMultiple = async (req, res) => {
   try {
     const { 
       searchTerm, 
-      searchTypes = 'PRODUCTS,ATTRACTIONS,DESTINATIONS', 
-      topX = 20, 
+      page = 1, 
+      limit = 20, 
       currencyCode = 'INR',
       sortBy = 'TRAVELER_RATING'
     } = req.query;
@@ -371,14 +371,32 @@ const searchMultiple = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Search term is required",
-        example: "/api/v1/viator/search/multiple?searchTerm=london"
+        example: "/api/v1/viator/search/multiple?searchTerm=delhi&page=1&limit=20"
+      });
+    }
+
+    // Validate page and limit parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Page must be a positive integer"
+      });
+    }
+
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Limit must be a positive integer between 1 and 100"
       });
     }
 
     const result = await viatorService.searchMultiple(
       searchTerm, 
-      searchTypes.split(','), 
-      topX, 
+      pageNum, 
+      limitNum, 
       currencyCode, 
       sortBy
     );
@@ -386,7 +404,13 @@ const searchMultiple = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Search results retrieved successfully",
-      data: result
+      data: result,
+      pagination: {
+        currentPage: pageNum,
+        limit: limitNum,
+        totalResults: result.totalResults || 0,
+        totalPages: Math.ceil((result.totalResults || 0) / limitNum)
+      }
     });
 
   } catch (error) {

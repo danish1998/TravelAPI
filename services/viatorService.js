@@ -147,16 +147,35 @@ class ViatorService {
   }
 
   // Search multiple types at once using freetext search
-  async searchMultiple(searchTerm, searchTypes = ['PRODUCTS', 'ATTRACTIONS', 'DESTINATIONS'], topX = 20, currencyCode = 'INR', sortBy = 'TRAVELER_RATING') {
+  async searchMultiple(searchTerm, page = 1, limit = 20, currencyCode = 'INR', sortBy = 'TRAVELER_RATING') {
+    // Calculate offset from page and limit
+    const offset = (page - 1) * limit;
+    
     const searchParams = {
       searchTerm,
-      searchTypes: searchTypes.map(type => ({
-        searchType: type,
-        pagination: {
-          offset: 0,
-          limit: topX
+      searchTypes: [
+        {
+          searchType: 'PRODUCTS',
+          pagination: {
+            offset: offset,
+            limit: limit
+          }
+        },
+        {
+          searchType: 'ATTRACTIONS',
+          pagination: {
+            offset: offset,
+            limit: limit
+          }
+        },
+        {
+          searchType: 'DESTINATIONS',
+          pagination: {
+            offset: offset,
+            limit: limit
+          }
         }
-      })),
+      ],
       currency: currencyCode
     };
 

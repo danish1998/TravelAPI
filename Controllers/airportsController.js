@@ -23,6 +23,9 @@ const getStateRegion = (searchTerm) => {
     'texas': 'US-TX',
     'florida': 'US-FL',
     'new york': 'US-NY',
+    'new york city': 'US-NY',
+    'nyc': 'US-NY',
+    'manhattan': 'US-NY',
     'goa': 'IN-GA',
     'illinois': 'US-IL',
     'ohio': 'US-OH',
@@ -83,6 +86,10 @@ const getCountryISO = (searchTerm) => {
     'iraq': 'IQ',
     'iran': 'IR',
     'goa': 'IN',
+    'new york': 'US',
+    'new york city': 'US',
+    'nyc': 'US',
+    'manhattan': 'US',
     'iran islamic republic': 'IR',
     'uae': 'AE',
     'united arab emirates': 'AE',
@@ -272,9 +279,6 @@ const searchAirports = async (req, res) => {
       priority_country // ISO country code to prioritize (e.g., "IN" for India)
     } = req.query;
     
-    // Set default priority country to India if not specified
-    const finalPriorityCountry = priority_country || 'IN';
-
     if (!q || q.trim() === '') {
       return res.status(400).json({
         success: false,
@@ -283,6 +287,14 @@ const searchAirports = async (req, res) => {
     }
 
     const searchTerm = q.trim();
+    
+    // Set default priority country to India if not specified, but override for specific searches
+    let finalPriorityCountry = priority_country || 'IN';
+    
+    // Override priority country for specific location searches
+    if (searchTerm.toLowerCase().includes('new york') || searchTerm.toLowerCase().includes('nyc') || searchTerm.toLowerCase().includes('manhattan')) {
+      finalPriorityCountry = 'US';
+    }
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Get alternative spellings for the search term
@@ -294,84 +306,117 @@ const searchAirports = async (req, res) => {
     // Get state ISO region code if search term is a state name
     const stateRegion = getStateRegion(searchTerm);
     
-    // Build comprehensive search conditions
-    const searchConditions = [];
-    
-    // 1. EXACT MATCHES (highest priority)
-    // IATA codes (3 letters)
-    if (searchTerm.length === 3) {
-      searchConditions.push({ iata_code: searchTerm.toUpperCase() });
-    }
-    
-    // ICAO codes (4 letters)
-    if (searchTerm.length === 4) {
-      searchConditions.push({ icao_code: searchTerm.toUpperCase() });
-    }
-    
-    // Airport identifiers
-    searchConditions.push({ ident: searchTerm.toUpperCase() });
-    
-    // 2. COUNTRY SEARCH
-    if (countryISO) {
-      searchConditions.push({ iso_country: countryISO });
-    } else if (searchTerm.length <= 2) {
-      searchConditions.push({ iso_country: searchTerm.toUpperCase() });
-    }
-    
-    // 2.5. STATE/REGION SEARCH
-    if (stateRegion) {
-      searchConditions.push({ iso_region: stateRegion });
-    }
-    
-    // 3. TEXT SEARCH - Simple and effective approach
-    if (searchTerm.length > 2) {
-      // Create a simple text search that works across all fields
-      const textSearch = {
-        $or: [
-          { name: new RegExp(searchTerm, 'i') },
-          { municipality: new RegExp(searchTerm, 'i') },
-          { keywords: new RegExp(searchTerm, 'i') },
-          { iso_region: new RegExp(searchTerm, 'i') }
+    // Special handling for New York searches
+    let searchQuery;
+    if (searchTerm.toLowerCase().includes('new york') || searchTerm.toLowerCase().includes('nyc') || searchTerm.toLowerCase().includes('manhattan')) {
+      // For New York searches, use a very specific query
+      searchQuery = {
+        $and: [
+          {
+            $or: [
+              { iata_code: 'JFK' },
+              { iata_code: 'LGA' },
+              { iata_code: 'EWR' },
+              { iata_code: 'SWF' }
+            ]
+          },
+          {
+            type: { $in: ['large_airport', 'medium_airport', 'small_airport'] }
+          }
         ]
       };
-      searchConditions.push(textSearch);
+    } else {
+      // Build comprehensive search conditions for other searches
+      const searchConditions = [];
       
-      // For multi-word searches, also search for individual words
-      if (searchTerm.includes(' ')) {
-        const words = searchTerm.split(/\s+/).filter(word => word.length > 1);
-        words.forEach(word => {
-          searchConditions.push({ name: new RegExp(word, 'i') });
-          searchConditions.push({ municipality: new RegExp(word, 'i') });
-          searchConditions.push({ keywords: new RegExp(word, 'i') });
-          searchConditions.push({ iso_region: new RegExp(word, 'i') });
-        });
+      // 1. EXACT MATCHES (highest priority)
+      // IATA codes (3 letters)
+      if (searchTerm.length === 3) {
+        searchConditions.push({ iata_code: searchTerm.toUpperCase() });
       }
-    }
-    
-    // 4. ALTERNATIVE SPELLINGS
-    alternatives.forEach(alt => {
-      searchConditions.push({ municipality: new RegExp(alt, 'i') });
-      searchConditions.push({ name: new RegExp(alt, 'i') });
-    });
-
-    // Build search query with better performance
-    const searchQuery = {
-      $and: [
-        {
-          $or: searchConditions
-        },
-        {
-          type: { $in: ['large_airport', 'medium_airport', 'small_airport'] }
+      
+      // ICAO codes (4 letters)
+      if (searchTerm.length === 4) {
+        searchConditions.push({ icao_code: searchTerm.toUpperCase() });
+      }
+      
+      // Airport identifiers
+      searchConditions.push({ ident: searchTerm.toUpperCase() });
+      
+      // 2. COUNTRY SEARCH
+      if (countryISO) {
+        searchConditions.push({ iso_country: countryISO });
+      } else if (searchTerm.length <= 2) {
+        searchConditions.push({ iso_country: searchTerm.toUpperCase() });
+      }
+      
+      // 2.5. STATE/REGION SEARCH
+      if (stateRegion) {
+        searchConditions.push({ iso_region: stateRegion });
+      }
+      
+      // 3. TEXT SEARCH - Improved approach for location-based searches
+      if (searchTerm.length > 2) {
+        if (searchTerm.includes(' ') || searchTerm.length > 4) {
+          // Multi-word or longer searches - likely location names
+          const textSearch = {
+            $or: [
+              { municipality: new RegExp(searchTerm, 'i') },
+              { keywords: new RegExp(searchTerm, 'i') },
+              { name: new RegExp(searchTerm, 'i') },
+              { iso_region: new RegExp(searchTerm, 'i') }
+            ]
+          };
+          searchConditions.push(textSearch);
+          
+          // For multi-word searches, also search for individual words
+          if (searchTerm.includes(' ')) {
+            const words = searchTerm.split(/\s+/).filter(word => word.length > 1);
+            words.forEach(word => {
+              searchConditions.push({ municipality: new RegExp(word, 'i') });
+              searchConditions.push({ keywords: new RegExp(word, 'i') });
+              searchConditions.push({ name: new RegExp(word, 'i') });
+              searchConditions.push({ iso_region: new RegExp(word, 'i') });
+            });
+          }
+        } else {
+          // Short searches - prioritize exact matches
+          const textSearch = {
+            $or: [
+              { name: new RegExp(searchTerm, 'i') },
+              { municipality: new RegExp(searchTerm, 'i') },
+              { keywords: new RegExp(searchTerm, 'i') },
+              { iso_region: new RegExp(searchTerm, 'i') }
+            ]
+          };
+          searchConditions.push(textSearch);
         }
-      ]
-    };
+      }
+      
+      // 4. ALTERNATIVE SPELLINGS
+      alternatives.forEach(alt => {
+        searchConditions.push({ municipality: new RegExp(alt, 'i') });
+        searchConditions.push({ name: new RegExp(alt, 'i') });
+      });
+
+      // Build search query with better performance
+      searchQuery = {
+        $and: [
+          {
+            $or: searchConditions
+          },
+          {
+            type: { $in: ['large_airport', 'medium_airport', 'small_airport'] }
+          }
+        ]
+      };
+    }
     
     // Debug logging
     console.log('Search term:', searchTerm);
     console.log('Country ISO:', countryISO);
     console.log('State Region:', stateRegion);
     console.log('Final Priority Country:', finalPriorityCountry);
-    console.log('Search conditions count:', searchConditions.length);
     console.log('Search query:', JSON.stringify(searchQuery, null, 2));
 
     // Use aggregation pipeline for proper type-based sorting

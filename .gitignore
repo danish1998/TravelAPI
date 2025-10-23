@@ -114,3 +114,6 @@ build/
 # API keys and secrets (extra protection)
 config/secrets.js
 config/keys.js
+GOOGLE_OAUTH_CONFIG.env
+*.env.local
+.env.production

@@ -80,4 +80,71 @@ const logout = async (req, res) => {
     res.json({ success: true });
 };
 
-module.exports = { register, login, logout };
+// Google OAuth callback handler
+const googleCallback = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Google authentication failed"
+            });
+        }
+
+        const user = req.user;
+        const token = signToken({ id: user._id, email: user.email });
+        
+        // Set JWT cookie
+        res.cookie(COOKIE_NAME, token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        });
+
+        // Redirect to frontend with success or return JSON
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const redirectUrl = `${frontendUrl}/auth/success?token=${token}`;
+        
+        res.redirect(redirectUrl);
+    } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        res.redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`);
+    }
+};
+
+// Get current user info (for both local and OAuth users)
+const getCurrentUser = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Not authenticated"
+            });
+        }
+
+        const user = await User.findById(req.user.id).select('name email mobile authProvider profilePicture');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                authProvider: user.authProvider,
+                profilePicture: user.profilePicture
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { register, login, logout, googleCallback, getCurrentUser };

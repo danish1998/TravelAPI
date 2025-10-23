@@ -60,7 +60,7 @@ const location = async (req, res, next) => {
 // Geocoding function using Geoapify API
 const geocode = async (req, res, next) => {
     try {
-        const { text, limit = 10, filter = "countrycode:in" } = req.query;
+        const { text, limit = 10, filter } = req.query;
 
         // Validate required parameters
         if (!text || text.trim() === '') {
@@ -136,7 +136,7 @@ const geocode = async (req, res, next) => {
             query: {
                 text: text.trim(),
                 limit: parseInt(limit),
-                filter: filter
+                filter: filter || "global"
             },
             results: {
                 count: results.length,

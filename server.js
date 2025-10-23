@@ -22,6 +22,8 @@ const { urlVersioning } = require("./middleware/apiVersioning");
 const { globalErrorhandler } = require("./middleware/ErrorHandler");
 const { connectDB } = require("./helpers/ConnectDB"); // <-- import connectDB
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
+const passport = require("./middleware/passport");
 const { verifyToken } = require("./middleware/auth");
 const itemsRouter = require("./routes/item-routes");
 
@@ -42,8 +44,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Apply API versioning to all /api routes
-app.use("/api", urlVersioning("v1"));
+// Session configuration for OAuth
+app.use(session({
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 const authRouter = require("./routes/auth-routes");
@@ -54,6 +69,13 @@ const cityRouter = require("./routes/cities-routes");
 const toursRouter = require("./routes/tours-routes");
 const viatorRouter = require("./routes/viator-routes");
 const airportsRouter = require("./routes/airports-routes");
+
+// OAuth callback route without versioning (Google redirects here)
+app.use("/api/auth", authRouter);
+
+// Apply API versioning to all /api routes
+app.use("/api", urlVersioning("v1"));
+
 app.use("/api/v1/flights", flightsRouter);
 app.use("/api/v1/hotels", hotelsRouter);
 app.use("/api/v1/location", locationRouter);

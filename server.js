@@ -69,6 +69,7 @@ const cityRouter = require("./routes/cities-routes");
 const toursRouter = require("./routes/tours-routes");
 const viatorRouter = require("./routes/viator-routes");
 const airportsRouter = require("./routes/airports-routes");
+const aiPlanningRouter = require("./routes/ai-planning-routes");
 
 // OAuth callback route without versioning (Google redirects here)
 app.use("/api/auth", authRouter);
@@ -83,6 +84,7 @@ app.use("/api/v1/cities", cityRouter);
 app.use("/api/v1/tours", toursRouter);
 app.use("/api/v1/viator", viatorRouter);
 app.use("/api/v1/airports", airportsRouter);
+app.use("/api/v1/ai-planning", aiPlanningRouter);
 app.use("/api/v1/auth", authRouter);
 app.get("/api/v1", (req, res) => {
   res.json({ message: "Travel API v1 is running!" });

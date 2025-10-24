@@ -1,195 +1,273 @@
 const express = require('express');
 const router = express.Router();
-const {
-  generateTravelRecommendations,
-  generateComprehensiveTravelPlan,
-  getTravelPlans,
-  getTravelPlan,
-  updateTravelPlanStatus,
-  getDestinationSuggestions
-} = require('../Controllers/aiPlanningController');
-const { verifyToken } = require('../middleware/auth');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const mongoose = require('mongoose');
+const TravelPlan = require('../Models/TravelPlan');
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * @route POST /api/v1/ai-planning/generate
- * @desc Generate AI travel recommendations
- * @access Public (optional auth)
+ * Generate comprehensive travel plan with AI recommendations and images
+ * POST /api/v1/ai-planning/generate-comprehensive-plan
  */
-router.post('/generate', async (req, res) => {
-  // Optional authentication - if user is logged in, associate plan with user
-  return generateTravelRecommendations(req, res);
-});
-
-/**
- * @route POST /api/v1/ai-planning/comprehensive
- * @desc Generate comprehensive travel plan with detailed form inputs
- * @access Public (optional auth)
- */
-router.post('/comprehensive', async (req, res) => {
-  return generateComprehensiveTravelPlan(req, res);
-});
-
-/**
- * @route GET /api/v1/ai-planning/destinations
- * @desc Get destination suggestions based on duration
- * @access Public
- */
-router.get('/destinations', getDestinationSuggestions);
-
-/**
- * @route GET /api/v1/ai-planning/plans
- * @desc Get saved travel plans (requires auth for user plans)
- * @access Public (for anonymous plans) / Private (for user plans)
- */
-router.get('/plans', async (req, res) => {
-  return getTravelPlans(req, res);
-});
-
-/**
- * @route GET /api/v1/ai-planning/plans/:planId
- * @desc Get a specific travel plan
- * @access Public
- */
-router.get('/plans/:planId', getTravelPlan);
-
-/**
- * @route PUT /api/v1/ai-planning/plans/:planId/status
- * @desc Update travel plan status
- * @access Public
- */
-router.put('/plans/:planId/status', updateTravelPlanStatus);
-
-/**
- * @route POST /api/v1/ai-planning/quick-plan
- * @desc Generate a quick travel plan with minimal input
- * @access Public
- */
-router.post('/quick-plan', async (req, res) => {
+router.post('/generate-comprehensive-plan', async (req, res) => {
   try {
-    const { days, budget } = req.body;
-    
-    if (!days) {
+    const {
+      country,
+      numberOfDays,
+      travelStyle,
+      interests,
+      budget,
+      groupType,
+      userId
+    } = req.body;
+
+    // Validate required fields
+    if (!country || !numberOfDays) {
       return res.status(400).json({
         success: false,
-        message: 'Number of days is required'
+        message: 'Country and number of days are required'
       });
     }
 
-    // Generate a quick plan with destination suggestions
-    const quickPlan = {
-      destination: 'Multiple destinations suggested',
-      duration: days,
-      budget: budget || null,
-      preferences: [],
-      recommendations: {
-        suggestedDestinations: [
-          {
-            name: 'Paris, France',
-            reason: `Perfect for ${days} days`,
-            estimatedCost: budget ? `${budget * 0.8}-${budget}` : '$800-1200',
-            highlights: ['Eiffel Tower', 'Louvre Museum', 'Seine River Cruise']
-          },
-          {
-            name: 'Tokyo, Japan',
-            reason: `Great for ${days} days`,
-            estimatedCost: budget ? `${budget * 0.9}-${budget}` : '$900-1300',
-            highlights: ['Tokyo Skytree', 'Senso-ji Temple', 'Tsukiji Fish Market']
-          },
-          {
-            name: 'Barcelona, Spain',
-            reason: `Ideal for ${days} days`,
-            estimatedCost: budget ? `${budget * 0.7}-${budget}` : '$600-1000',
-            highlights: ['Sagrada Familia', 'Park Güell', 'Las Ramblas']
-          }
-        ],
-        totalEstimatedCost: budget || 1000,
-        travelTips: [
-          'Book flights and accommodation in advance',
-          'Check visa requirements',
-          'Pack according to season and destination',
-          'Download offline maps and translation apps'
+    const unsplashApiKey = process.env.UNSPLASH_SECRET_KEY;
+
+    // Create comprehensive prompt for travel planning
+    const prompt = `Generate a ${numberOfDays}-day travel itinerary for ${country} based on the following user information:
+      Budget: '${budget}'
+      Interests: '${interests}'
+      TravelStyle: '${travelStyle}'
+      GroupType: '${groupType}'
+      Return the itinerary and lowest estimated price in a clean, non-markdown JSON format with the following structure:
+      {
+      "name": "A descriptive title for the trip",
+      "description": "A brief description of the trip and its highlights not exceeding 100 words",
+      "estimatedPrice": "Lowest average price for the trip in USD, e.g.$price",
+      "duration": ${numberOfDays},
+      "budget": "${budget}",
+      "travelStyle": "${travelStyle}",
+      "country": "${country}",
+      "interests": ${JSON.stringify(interests)},
+      "groupType": "${groupType}",
+      "bestTimeToVisit": [
+        '🌸 Season (from month to month): reason to visit',
+        '☀️ Season (from month to month): reason to visit',
+        '🍁 Season (from month to month): reason to visit',
+        '❄️ Season (from month to month): reason to visit'
+      ],
+      "weatherInfo": [
+        '☀️ Season: temperature range in Celsius (temperature range in Fahrenheit)',
+        '🌦️ Season: temperature range in Celsius (temperature range in Fahrenheit)',
+        '🌧️ Season: temperature range in Celsius (temperature range in Fahrenheit)',
+        '❄️ Season: temperature range in Celsius (temperature range in Fahrenheit)'
+      ],
+      "location": {
+        "city": "name of the city or region",
+        "coordinates": [latitude, longitude],
+        "openStreetMap": "link to open street map"
+      },
+      "itinerary": [
+      {
+        "day": 1,
+        "location": "City/Region Name",
+        "activities": [
+          {"time": "Morning", "description": "🏰 Visit the local historic castle and enjoy a scenic walk"},
+          {"time": "Afternoon", "description": "🖼️ Explore a famous art museum with a guided tour"},
+          {"time": "Evening", "description": "🍷 Dine at a rooftop restaurant with local wine"}
         ]
       }
+      ]
+  }`;
+
+    // Generate content using Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const result = await model.generateContent([prompt]);
+    let aiResponse = result.response.text();
+    
+    // Clean the response - remove markdown code blocks if present
+    if (aiResponse.includes('```json')) {
+      aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    
+    const trip = JSON.parse(aiResponse);
+
+    // Fetch images from Unsplash
+    let imageUrls = [];
+    if (unsplashApiKey) {
+      try {
+        const imageResponse = await fetch(
+          `https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&client_id=${unsplashApiKey}`
+        );
+        const imageData = await imageResponse.json();
+        imageUrls = imageData.results
+          .slice(0, 3)
+          .map((result) => result.urls?.regular || null)
+          .filter(url => url !== null);
+      } catch (imageError) {
+        console.warn('Failed to fetch images from Unsplash:', imageError.message);
+      }
+    }
+
+    // Convert budget string to number if possible
+    let budgetNumber = null;
+    if (budget) {
+      if (typeof budget === 'string') {
+        // Convert budget strings to approximate numbers
+        const budgetMap = {
+          'Low': 500,
+          'Medium': 1500,
+          'High': 3000,
+          'Luxury': 5000
+        };
+        budgetNumber = budgetMap[budget] || 1000;
+      } else {
+        budgetNumber = budget;
+      }
+    }
+
+    // Transform AI response to match TravelPlan schema
+    const transformedRecommendations = {
+      itinerary: trip.itinerary?.map(day => ({
+        day: day.day,
+        activities: day.activities?.map(activity => 
+          `${activity.time}: ${activity.description}`
+        ) || [],
+        estimatedCost: 100, // Default cost per day
+        timeRequired: 'Full day'
+      })) || [],
+      totalEstimatedCost: budgetNumber,
+      bestTimeToVisit: Array.isArray(trip.bestTimeToVisit) ? 
+        trip.bestTimeToVisit.join('; ') : trip.bestTimeToVisit || '',
+      weatherInfo: Array.isArray(trip.weatherInfo) ? 
+        trip.weatherInfo.join('; ') : trip.weatherInfo || '',
+      travelTips: trip.travelTips || [],
+      mustVisitPlaces: trip.mustVisitPlaces || [],
+      alternativeDestinations: trip.alternativeDestinations || []
     };
+
+    // Create travel plan record
+    const travelPlan = new TravelPlan({
+      userId: userId && mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : null,
+      destination: country,
+      duration: numberOfDays,
+      budget: budgetNumber,
+      preferences: interests || [],
+      aiRecommendations: transformedRecommendations,
+      status: 'draft'
+    });
+
+    await travelPlan.save();
 
     res.status(200).json({
       success: true,
-      message: 'Quick travel plan generated',
-      data: quickPlan
+      message: 'Comprehensive travel plan generated successfully',
+      data: {
+        planId: travelPlan._id,
+        trip: trip,
+        imageUrls: imageUrls
+      }
     });
 
   } catch (error) {
-    console.error('Error generating quick plan:', error);
+    console.error('Error generating comprehensive travel plan:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to generate quick plan',
+      message: 'Failed to generate travel plan',
       error: error.message
     });
   }
 });
 
 /**
- * @route GET /api/v1/ai-planning/feasibility/:destination/:days
- * @desc Check if a destination is feasible for given number of days
- * @access Public
+ * Get travel plan by ID
+ * GET /api/v1/ai-planning/plan/:planId
  */
-router.get('/feasibility/:destination/:days', async (req, res) => {
+router.get('/plan/:planId', async (req, res) => {
   try {
-    const { destination, days } = req.params;
-    const daysNum = parseInt(days);
-
-    if (isNaN(daysNum) || daysNum < 1) {
-      return res.status(400).json({
+    const { planId } = req.params;
+    
+    const plan = await TravelPlan.findById(planId);
+    
+    if (!plan) {
+      return res.status(404).json({
         success: false,
-        message: 'Invalid number of days'
+        message: 'Travel plan not found'
       });
-    }
-
-    // Simple feasibility logic based on destination and days
-    let feasibility = {
-      destination,
-      days: daysNum,
-      isFeasible: true,
-      feasibilityScore: 8,
-      reasons: [],
-      suggestions: []
-    };
-
-    if (daysNum < 2) {
-      feasibility.isFeasible = false;
-      feasibility.feasibilityScore = 3;
-      feasibility.reasons.push('Less than 2 days is too short for meaningful travel');
-      feasibility.suggestions.push('Consider extending to at least 3 days');
-    } else if (daysNum > 14) {
-      feasibility.feasibilityScore = 7;
-      feasibility.reasons.push('Long trips require more planning and budget');
-      feasibility.suggestions.push('Consider breaking into multiple shorter trips');
-    } else if (daysNum >= 3 && daysNum <= 7) {
-      feasibility.feasibilityScore = 9;
-      feasibility.reasons.push('Ideal duration for most destinations');
-    }
-
-    // Destination-specific logic
-    const destinationLower = destination.toLowerCase();
-    if (destinationLower.includes('island') || destinationLower.includes('maldives')) {
-      feasibility.feasibilityScore = Math.min(feasibility.feasibilityScore + 1, 10);
-      feasibility.reasons.push('Island destinations are perfect for relaxation');
-    }
-
-    if (destinationLower.includes('europe')) {
-      feasibility.suggestions.push('Consider multiple cities with good train connections');
     }
 
     res.status(200).json({
       success: true,
-      data: feasibility
+      data: plan
     });
-
   } catch (error) {
-    console.error('Error checking feasibility:', error);
+    console.error('Error fetching travel plan:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to check feasibility',
+      message: 'Failed to fetch travel plan',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get all travel plans for a user
+ * GET /api/v1/ai-planning/plans
+ */
+router.get('/plans', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    
+    const plans = await TravelPlan.find(
+      userId ? { userId } : {}
+    ).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: plans
+    });
+  } catch (error) {
+    console.error('Error fetching travel plans:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch travel plans',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Update travel plan status
+ * PUT /api/v1/ai-planning/plan/:planId/status
+ */
+router.put('/plan/:planId/status', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const { status } = req.body;
+
+    const plan = await TravelPlan.findByIdAndUpdate(
+      planId,
+      { status },
+      { new: true }
+    );
+
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Travel plan not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Travel plan status updated successfully',
+      data: plan
+    });
+  } catch (error) {
+    console.error('Error updating travel plan status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update travel plan status',
       error: error.message
     });
   }

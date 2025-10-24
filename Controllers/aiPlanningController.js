@@ -22,14 +22,42 @@ const generateTravelRecommendations = async (req, res) => {
     // Get the generative model - try different model names
     let model;
     try {
-      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    } catch (error) {
-      try {
-        model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      } catch (error2) {
-        // Fallback to a simple response if Gemini is not available
-        return generateFallbackRecommendations(req, res);
+      // Try the most common working models
+      const modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro', 'gemini-1.0-pro'];
+      let modelFound = false;
+      
+      for (const modelName of modelsToTry) {
+        try {
+          model = genAI.getGenerativeModel({ model: modelName });
+          console.log(`✅ Using model: ${modelName}`);
+          modelFound = true;
+          break;
+        } catch (modelError) {
+          console.log(`❌ Model ${modelName} not available:`, modelError.message);
+        }
       }
+      
+      if (!modelFound) {
+        throw new Error('No Gemini models are available. Please check your API key and permissions.');
+      }
+    } catch (error) {
+      console.error('Gemini API setup error:', error.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Gemini AI is not available',
+        error: error.message,
+        instructions: {
+          setup: 'To use Gemini AI, you need to:',
+          steps: [
+            '1. Go to https://makersuite.google.com/app/apikey',
+            '2. Create a new API key',
+            '3. Enable the Generative Language API in Google Cloud Console',
+            '4. Update your GEMINI_API_KEY in .env file',
+            '5. Restart your server'
+          ],
+          alternative: 'You can also use the Groq AI controller (aiPlanningController-groq.js) as an alternative'
+        }
+      });
     }
 
     // Create a comprehensive prompt for travel planning

@@ -101,15 +101,15 @@ const googleCallback = async (req, res, next) => {
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         });
 
-        // Redirect to frontend with success or return JSON
+        // Redirect to frontend home page after successful authentication
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const redirectUrl = `${frontendUrl}/auth/success?token=${token}`;
+        const redirectUrl = `${frontendUrl}/`;
         
         res.redirect(redirectUrl);
     } catch (error) {
         console.error('Google OAuth callback error:', error);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        res.redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`);
+        res.redirect(`${frontendUrl}/?error=${encodeURIComponent(error.message)}`);
     }
 };
 

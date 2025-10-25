@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
     {
         name: { type: String, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-        mobile: { type: String, trim: true }, // Made optional for OAuth users
+        mobile: { type: String, trim: true, sparse: true }, // Made sparse to allow multiple null values
         passwordHash: { type: String }, // Made optional for OAuth users
         googleId: { type: String, unique: true, sparse: true }, // Google OAuth ID
         profilePicture: { type: String }, // Profile picture URL from Google
@@ -34,6 +34,8 @@ userSchema.statics.hashPassword = async function (plainPassword) {
 // Method to find or create OAuth user
 userSchema.statics.findOrCreateOAuthUser = async function (profile) {
     try {
+        const email = profile.emails[0].value;
+        
         // First, try to find existing user by Google ID
         let user = await this.findOne({ googleId: profile.id });
         
@@ -42,28 +44,35 @@ userSchema.statics.findOrCreateOAuthUser = async function (profile) {
         }
         
         // If not found by Google ID, check if user exists with same email
-        user = await this.findOne({ email: profile.emails[0].value });
+        user = await this.findOne({ email: email });
         
         if (user) {
-            // Link Google account to existing user
-            user.googleId = profile.id;
-            user.authProvider = 'google';
-            user.profilePicture = profile.photos[0]?.value;
-            await user.save();
+            // If user exists but doesn't have Google ID, link it
+            if (!user.googleId) {
+                user.googleId = profile.id;
+                user.authProvider = 'google';
+                user.profilePicture = profile.photos[0]?.value;
+                await user.save();
+            }
             return user;
         }
         
-        // Create new user
-        user = await this.create({
+        // Create new user with proper handling of mobile field
+        const userData = {
             name: profile.displayName,
-            email: profile.emails[0].value,
+            email: email,
             googleId: profile.id,
             profilePicture: profile.photos[0]?.value,
             authProvider: 'google'
-        });
+        };
+        
+        // Only set mobile if it's provided (for OAuth users, it's usually null)
+        // Don't set mobile field at all for OAuth users to avoid null conflicts
+        user = await this.create(userData);
         
         return user;
     } catch (error) {
+        console.error('OAuth user creation error:', error);
         throw new Error(`OAuth user creation failed: ${error.message}`);
     }
 };

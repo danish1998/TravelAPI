@@ -47,7 +47,7 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
       - Shopping and miscellaneous expenses
       - Accommodation costs (if applicable)
       
-      Return the itinerary and realistic estimated price in a clean, non-markdown JSON format with the following structure:
+      IMPORTANT: You MUST respond with ONLY valid JSON. Do not include any text before or after the JSON. Do not use markdown formatting. Return the itinerary and realistic estimated price in a clean, non-markdown JSON format with the following structure:
       {
       "name": "A descriptive title for the trip",
       "description": "A brief description of the trip and its highlights not exceeding 100 words",
@@ -88,17 +88,70 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
       ]
   }`;
 
-    // Generate content using Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const result = await model.generateContent([prompt]);
-    let aiResponse = result.response.text();
-    
-    // Clean the response - remove markdown code blocks if present
-    if (aiResponse.includes('```json')) {
-      aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    // Try to generate content using Gemini, with fallback
+    let trip;
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      
+      // Add system instruction for JSON format
+      const systemInstruction = {
+        role: "system",
+        parts: [{ text: "You are a travel planning assistant. You MUST respond with ONLY valid JSON format. Do not include any explanatory text, markdown formatting, or code blocks. Just return the JSON object directly." }]
+      };
+      
+      const result = await model.generateContent([systemInstruction, prompt]);
+      let aiResponse = result.response.text();
+      
+      // Clean the response - remove markdown code blocks if present
+      if (aiResponse.includes('```json')) {
+        aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      }
+      
+      // Try to parse JSON
+      try {
+        trip = JSON.parse(aiResponse);
+        console.log('✅ Successfully generated AI travel plan');
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError.message);
+        console.error('AI Response:', aiResponse.substring(0, 200) + '...');
+        throw new Error('AI returned invalid JSON format');
+      }
+      
+    } catch (geminiError) {
+      console.error('❌ Gemini AI Error:', geminiError.message);
+      console.log('🔄 Falling back to generated travel plan...');
+      
+      // Create a comprehensive fallback response
+      trip = {
+        name: `${numberOfDays}-Day ${travelStyle} Trip to ${country}`,
+        description: `A ${numberOfDays}-day ${travelStyle.toLowerCase()} adventure in ${country} perfect for ${groupType.toLowerCase()} travelers. Experience the best of ${country} with carefully curated activities and authentic local experiences.`,
+        estimatedPrice: `₹${budgetNumber ? budgetNumber * numberOfDays : calculateFallbackBudget(numberOfDays, travelStyle)}`,
+        duration: numberOfDays,
+        budget: budget,
+        travelStyle: travelStyle,
+        country: country,
+        interests: interests,
+        groupType: groupType,
+        bestTimeToVisit: [
+          '🌸 Spring (March-May): Pleasant weather and blooming flowers',
+          '☀️ Summer (June-August): Warm weather, perfect for outdoor activities',
+          '🍁 Autumn (September-November): Cool weather and beautiful foliage',
+          '❄️ Winter (December-February): Cool weather, fewer crowds'
+        ],
+        weatherInfo: [
+          '☀️ Summer: 25-35°C (77-95°F)',
+          '🌦️ Monsoon: 20-30°C (68-86°F)',
+          '🌧️ Winter: 10-25°C (50-77°F)',
+          '❄️ Spring: 15-30°C (59-86°F)'
+        ],
+        location: {
+          city: country,
+          coordinates: [0, 0],
+          openStreetMap: `https://www.openstreetmap.org/search?query=${encodeURIComponent(country)}`
+        },
+        itinerary: generateFallbackItinerary(numberOfDays, country, travelStyle)
+      };
     }
-    
-    const trip = JSON.parse(aiResponse);
 
     // Fetch images from Unsplash
     let imageUrls = [];
@@ -400,5 +453,91 @@ router.put('/plan/:planId/status', async (req, res) => {
     });
   }
 });
+
+/**
+ * Calculate fallback budget based on travel style and duration
+ */
+function calculateFallbackBudget(numberOfDays, travelStyle) {
+  const baseCostPerDay = {
+    'Budget': 2000,
+    'Mid-range': 4000,
+    'Luxury': 8000,
+    'Premium': 12000
+  };
+  
+  const style = travelStyle || 'Mid-range';
+  const dailyCost = baseCostPerDay[style] || baseCostPerDay['Mid-range'];
+  return dailyCost * numberOfDays;
+}
+
+/**
+ * Generate fallback itinerary when AI response parsing fails
+ */
+function generateFallbackItinerary(numberOfDays, country, travelStyle) {
+  const itinerary = [];
+  
+  // Define activities based on travel style
+  const activityTemplates = {
+    'Budget': {
+      morning: ['🌅 Local breakfast at street food stalls', '🚶 Walking tour of city center', '🏛️ Free museum visits'],
+      afternoon: ['🏛️ Historical landmarks', '🛍️ Local markets', '🌳 Public parks and gardens'],
+      evening: ['🍽️ Local street food', '🌆 Sunset viewpoints', '🎭 Free cultural shows']
+    },
+    'Mid-range': {
+      morning: ['🌅 Breakfast at local cafes', '🏛️ Guided museum tours', '🚶 Walking tours with guides'],
+      afternoon: ['🎯 Popular attractions', '🍽️ Local restaurants', '🛍️ Shopping districts'],
+      evening: ['🍽️ Traditional restaurants', '🌆 Rooftop bars', '🎭 Cultural performances']
+    },
+    'Luxury': {
+      morning: ['🌅 Gourmet breakfast', '🏛️ Private museum tours', '🚗 Private guided tours'],
+      afternoon: ['🎯 Exclusive attractions', '🍽️ Fine dining', '🛍️ Luxury shopping'],
+      evening: ['🍽️ Michelin-starred restaurants', '🌆 Premium bars', '🎭 VIP cultural events']
+    }
+  };
+  
+  const activities = activityTemplates[travelStyle] || activityTemplates['Mid-range'];
+  
+  for (let day = 1; day <= numberOfDays; day++) {
+    const dayActivities = [];
+    
+    // Morning activity
+    dayActivities.push({
+      time: "Morning",
+      description: activities.morning[Math.floor(Math.random() * activities.morning.length)]
+    });
+    
+    // Afternoon activity
+    if (day === 1) {
+      dayActivities.push({
+        time: "Afternoon",
+        description: `🏛️ Visit the main historical landmarks and cultural sites in ${country}`
+      });
+    } else if (day === numberOfDays) {
+      dayActivities.push({
+        time: "Afternoon",
+        description: `🛍️ Final day shopping and souvenir hunting in local markets`
+      });
+    } else {
+      dayActivities.push({
+        time: "Afternoon",
+        description: activities.afternoon[Math.floor(Math.random() * activities.afternoon.length)]
+      });
+    }
+    
+    // Evening activity
+    dayActivities.push({
+      time: "Evening",
+      description: activities.evening[Math.floor(Math.random() * activities.evening.length)]
+    });
+    
+    itinerary.push({
+      day: day,
+      location: country,
+      activities: dayActivities
+    });
+  }
+  
+  return itinerary;
+}
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const express = require("express");
 const passport = require("../middleware/passport");
-const { register, login, logout, googleCallback, getCurrentUser } = require("../Controllers/authController");
+const { register, login, logout, googleCallback, getCurrentUser, checkAuthStatus } = require("../Controllers/authController");
 const { verifyToken } = require("../middleware/auth");
 
 const router = express.Router();
@@ -21,7 +21,10 @@ router.get("/google/callback",
     googleCallback
 );
 
-// Get current user info
+// Get current user info (requires authentication)
 router.get("/me", verifyToken(), getCurrentUser);
+
+// Check authentication status (public endpoint - doesn't require authentication)
+router.get("/status", verifyToken({ required: false }), checkAuthStatus);
 
 module.exports = router;

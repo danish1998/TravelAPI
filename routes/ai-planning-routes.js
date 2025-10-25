@@ -3,9 +3,13 @@ const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const mongoose = require('mongoose');
 const TravelPlan = require('../Models/TravelPlan');
+const { verifyToken } = require('../middleware/auth');
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// All AI planning routes require authentication
+router.use(verifyToken());
 
 /**
  * Generate comprehensive travel plan with AI recommendations and images
@@ -292,7 +296,7 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
 
     // Create travel plan record
     const travelPlan = new TravelPlan({
-      userId: userId && mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : null,
+      userId: req.user ? req.user.id : null,
       destination: country,
       duration: numberOfDays,
       budget: budgetNumber,
@@ -377,10 +381,8 @@ router.get('/plan/:planId', async (req, res) => {
  */
 router.get('/plans', async (req, res) => {
   try {
-    const { userId } = req.query;
-    
     const plans = await TravelPlan.find(
-      userId ? { userId } : {}
+      { userId: req.user.id }
     ).sort({ createdAt: -1 });
 
     // Format all plans with proper currency display

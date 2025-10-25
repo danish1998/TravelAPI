@@ -119,7 +119,8 @@ const getCurrentUser = async (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({
                 success: false,
-                message: "Not authenticated"
+                message: "Not authenticated",
+                requiresLogin: true
             });
         }
 
@@ -127,12 +128,14 @@ const getCurrentUser = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "User not found",
+                requiresLogin: true
             });
         }
 
         res.json({
             success: true,
+            authenticated: true,
             user: {
                 id: user._id,
                 name: user.name,
@@ -147,4 +150,43 @@ const getCurrentUser = async (req, res, next) => {
     }
 };
 
-module.exports = { register, login, logout, googleCallback, getCurrentUser };
+// Check authentication status (public endpoint)
+const checkAuthStatus = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            return res.json({
+                success: true,
+                authenticated: false,
+                message: "User not authenticated",
+                requiresLogin: true
+            });
+        }
+
+        const user = await User.findById(req.user.id).select('name email mobile authProvider profilePicture');
+        if (!user) {
+            return res.json({
+                success: true,
+                authenticated: false,
+                message: "User not found",
+                requiresLogin: true
+            });
+        }
+
+        res.json({
+            success: true,
+            authenticated: true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                authProvider: user.authProvider,
+                profilePicture: user.profilePicture
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { register, login, logout, googleCallback, getCurrentUser, checkAuthStatus };

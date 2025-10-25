@@ -14,6 +14,26 @@ const travelPlanSchema = new mongoose.Schema({
     type: Number, // Number of days
     required: true
   },
+  name: {
+    type: String,
+    required: false
+  },
+  description: {
+    type: String,
+    required: false
+  },
+  estimatedPrice: {
+    type: String,
+    required: false
+  },
+  travelStyle: {
+    type: String,
+    required: false
+  },
+  groupType: {
+    type: String,
+    required: false
+  },
   budget: {
     type: Number,
     required: false
@@ -50,6 +70,10 @@ const travelPlanSchema = new mongoose.Schema({
     type: String,
     enum: ['draft', 'saved', 'booked'],
     default: 'draft'
+  },
+  imageUrls: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true

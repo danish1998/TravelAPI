@@ -78,7 +78,7 @@ async function generateTravelRecommendations(params) {
       return {
         rawResponse: response,
         itinerary: generateFallbackItinerary(duration),
-        totalEstimatedCost: budget || 1000,
+        totalEstimatedCost: budget || calculateRealisticBudget(duration),
         travelTips: [
           'Check local weather conditions',
           'Book accommodations in advance',
@@ -241,13 +241,7 @@ async function generateComprehensivePlan(params) {
       return {
         rawResponse: response,
         dailyItinerary: generateFallbackItinerary(numberOfDays),
-        budgetBreakdown: {
-          accommodation: { dailyUSD: 100, totalUSD: 100 * numberOfDays },
-          food: { dailyUSD: 50, totalUSD: 50 * numberOfDays },
-          activities: { dailyUSD: 75, totalUSD: 75 * numberOfDays },
-          transportation: { dailyUSD: 25, totalUSD: 25 * numberOfDays },
-          totalUSD: 250 * numberOfDays
-        },
+        budgetBreakdown: calculateRealisticBudgetBreakdown(numberOfDays, budgetUSD),
         travelTips: [
           'Check local weather conditions',
           'Book accommodations in advance',
@@ -281,14 +275,68 @@ async function generateComprehensivePlan(params) {
 function generateFallbackItinerary(days) {
   const itinerary = [];
   for (let i = 1; i <= days; i++) {
+    // Calculate realistic daily cost
+    const baseCost = 2000; // Base cost in INR
+    const dayMultiplier = 1 + (i * 0.15); // Increase for later days
+    const randomVariation = 0.7 + (Math.random() * 0.6); // ±30% variation
+    const estimatedCost = Math.round(baseCost * dayMultiplier * randomVariation);
+    
     itinerary.push({
       day: i,
       activities: [`Day ${i} activities to be planned`],
-      estimatedCost: 100,
+      estimatedCost: estimatedCost,
       timeRequired: 'Full day'
     });
   }
   return itinerary;
+}
+
+// Calculate realistic budget based on duration
+function calculateRealisticBudget(duration) {
+  const baseCost = 3000; // Base cost per day in INR
+  const totalCost = baseCost * duration;
+  const randomVariation = 0.8 + (Math.random() * 0.4); // ±20% variation
+  return Math.round(totalCost * randomVariation);
+}
+
+// Calculate realistic budget breakdown
+function calculateRealisticBudgetBreakdown(days, budgetUSD) {
+  const totalBudget = budgetUSD || (days * 100); // Default $100/day if no budget provided
+  
+  // Distribute budget across categories
+  const accommodation = Math.round(totalBudget * 0.4 / days); // 40% for accommodation
+  const food = Math.round(totalBudget * 0.3 / days); // 30% for food
+  const activities = Math.round(totalBudget * 0.2 / days); // 20% for activities
+  const transportation = Math.round(totalBudget * 0.1 / days); // 10% for transportation
+  
+  return {
+    accommodation: { 
+      dailyUSD: accommodation, 
+      totalUSD: accommodation * days,
+      dailyINR: Math.round(accommodation * 83),
+      totalINR: Math.round(accommodation * 83 * days)
+    },
+    food: { 
+      dailyUSD: food, 
+      totalUSD: food * days,
+      dailyINR: Math.round(food * 83),
+      totalINR: Math.round(food * 83 * days)
+    },
+    activities: { 
+      dailyUSD: activities, 
+      totalUSD: activities * days,
+      dailyINR: Math.round(activities * 83),
+      totalINR: Math.round(activities * 83 * days)
+    },
+    transportation: { 
+      dailyUSD: transportation, 
+      totalUSD: transportation * days,
+      dailyINR: Math.round(transportation * 83),
+      totalINR: Math.round(transportation * 83 * days)
+    },
+    totalUSD: totalBudget,
+    totalINR: Math.round(totalBudget * 83)
+  };
 }
 
 function generateFallbackDestinations(duration) {

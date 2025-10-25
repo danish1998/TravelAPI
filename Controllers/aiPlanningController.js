@@ -314,10 +314,16 @@ const getDestinationSuggestions = async (req, res) => {
 function parseItineraryFromText(text, duration) {
   const itinerary = [];
   for (let i = 1; i <= duration; i++) {
+    // Calculate realistic daily cost based on duration and day number
+    const baseCost = 1500; // Base cost in INR
+    const dayMultiplier = 1 + (i * 0.1); // Slight increase for later days
+    const randomVariation = 0.8 + (Math.random() * 0.4); // ±20% variation
+    const estimatedCost = Math.round(baseCost * dayMultiplier * randomVariation);
+    
     itinerary.push({
       day: i,
       activities: [`Day ${i} activities to be planned`],
-      estimatedCost: 100,
+      estimatedCost: estimatedCost,
       timeRequired: 'Full day'
     });
   }
@@ -325,8 +331,42 @@ function parseItineraryFromText(text, duration) {
 }
 
 function parseCostFromText(text) {
-  const costMatch = text.match(/\$(\d+)/);
-  return costMatch ? parseInt(costMatch[1]) : 500;
+  // Try to extract cost from text (look for various patterns)
+  const costPatterns = [
+    /\$(\d+)/,           // $500
+    /₹(\d+)/,            // ₹5000
+    /(\d+)\s*USD/i,      // 500 USD
+    /(\d+)\s*INR/i,      // 5000 INR
+    /total.*?(\d+)/i,    // total 5000
+    /budget.*?(\d+)/i    // budget 5000
+  ];
+  
+  for (const pattern of costPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const cost = parseInt(match[1]);
+      // If it's in USD, convert to INR (approximate rate 83)
+      if (pattern.source.includes('$') || pattern.source.includes('USD')) {
+        return cost * 83;
+      }
+      return cost;
+    }
+  }
+  
+  // Default realistic cost based on text length and content
+  const textLength = text.length;
+  const hasLuxury = /luxury|premium|high-end|expensive/i.test(text);
+  const hasBudget = /budget|cheap|affordable|low-cost/i.test(text);
+  
+  let baseCost = 5000; // Default base cost in INR
+  
+  if (hasLuxury) baseCost = 15000;
+  else if (hasBudget) baseCost = 3000;
+  
+  // Adjust based on text complexity (longer text might indicate more detailed planning)
+  const complexityMultiplier = Math.min(2, Math.max(0.5, textLength / 1000));
+  
+  return Math.round(baseCost * complexityMultiplier);
 }
 
 function parseTipsFromText(text) {

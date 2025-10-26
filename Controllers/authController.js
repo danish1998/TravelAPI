@@ -106,9 +106,9 @@ const googleCallback = async (req, res, next) => {
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         });
 
-        // Redirect to frontend home page after successful authentication
+        // Redirect to frontend callback page with JWT token
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-        const redirectUrl = `${frontendUrl}/`;
+        const redirectUrl = `${frontendUrl}/auth/callback?token=${token}`;
         
         console.log('Redirecting to:', redirectUrl);
         res.redirect(redirectUrl);

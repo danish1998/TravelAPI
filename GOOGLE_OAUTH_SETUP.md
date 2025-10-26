@@ -10,8 +10,8 @@ Add these to your `.env` file:
 
 ```env
 # Google OAuth Configuration
-GOOGLE_CLIENT_ID=180660121835-166mq0jh45um408tkdamsg528kfhcubi.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CLIENT_ID=1017864146115-6uq898gljoc2be49ue77504ijv8v0kt3.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
 GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
 
 # Frontend URL for redirects after OAuth

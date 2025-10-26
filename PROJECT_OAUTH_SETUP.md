@@ -50,8 +50,8 @@ curl -X GET https://www.comfortmytrip.com/api/v1/auth/me
 
 Add these to your `.env` file:
 ```env
-GOOGLE_CLIENT_ID=your_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CLIENT_ID=1017864146115-6uq898gljoc2be49ue77504ijv8v0kt3.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
 GOOGLE_CALLBACK_URL=https://www.comfortmytrip.com/api/v1/auth/google/callback
 FRONTEND_URL=https://www.comfortmytrip.com
 SESSION_SECRET=your_session_secret_here

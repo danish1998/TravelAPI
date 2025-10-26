@@ -4,7 +4,7 @@ const User = require('../Models/User');
 
 // Google OAuth Strategy
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || '180660121835-166mq0jh45um408tkdamsg528kfhcubi.apps.googleusercontent.com',
+    clientID: process.env.GOOGLE_CLIENT_ID || '1017864146115-6uq898gljoc2be49ue77504ijv8v0kt3.apps.googleusercontent.com',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback'
 }, async (accessToken, refreshToken, profile, done) => {

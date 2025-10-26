@@ -15,8 +15,8 @@ cp GOOGLE_OAUTH_CONFIG.env.example GOOGLE_OAUTH_CONFIG.env
 Edit the `GOOGLE_OAUTH_CONFIG.env` file and replace the placeholder values with your actual credentials:
 
 ```env
-GOOGLE_CLIENT_ID=your_actual_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_actual_google_client_secret_here
+GOOGLE_CLIENT_ID=1017864146115-6uq898gljoc2be49ue77504ijv8v0kt3.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
 GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
 FRONTEND_URL=https://www.comfortmytrip.com
 SESSION_SECRET=your_actual_session_secret_here

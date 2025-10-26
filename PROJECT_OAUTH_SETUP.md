@@ -19,7 +19,7 @@
 3. Add **Authorized redirect URIs**:
 
 ```
-http://localhost:8080/api/v1/auth/google/callback
+https://www.comfortmytrip.com/api/v1/auth/google/callback
 ```
 
 ### **Step 3: Enable Required APIs**
@@ -30,20 +30,20 @@ Make sure these APIs are enabled in your project:
 ## 🚀 Testing Your OAuth Integration
 
 ### **Current Working URLs:**
-- **OAuth Start**: `http://localhost:8080/api/v1/auth/google` ✅
-- **OAuth Callback**: `http://localhost:8080/api/v1/auth/google/callback` ✅
-- **API Health**: `http://localhost:8080/api/v1/` ✅
+- **OAuth Start**: `https://www.comfortmytrip.com/api/v1/auth/google` ✅
+- **OAuth Callback**: `https://www.comfortmytrip.com/api/v1/auth/google/callback` ✅
+- **API Health**: `https://www.comfortmytrip.com/api/v1/` ✅
 
 ### **Test Commands:**
 ```bash
 # Test OAuth flow
-curl -X GET http://localhost:8080/api/v1/auth/google -v
+curl -X GET https://www.comfortmytrip.com/api/v1/auth/google -v
 
 # Test API health
-curl -X GET http://localhost:8080/api/v1/
+curl -X GET https://www.comfortmytrip.com/api/v1/
 
 # Test protected endpoint
-curl -X GET http://localhost:8080/api/v1/auth/me
+curl -X GET https://www.comfortmytrip.com/api/v1/auth/me
 ```
 
 ## 🔐 Environment Variables
@@ -52,15 +52,15 @@ Add these to your `.env` file:
 ```env
 GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
-GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
-FRONTEND_URL=http://localhost:3000
+GOOGLE_CALLBACK_URL=https://www.comfortmytrip.com/api/v1/auth/google/callback
+FRONTEND_URL=https://www.comfortmytrip.com
 SESSION_SECRET=your_session_secret_here
 ```
 
 ## 🧪 Complete OAuth Flow Test
 
 ### **Step 1: Start OAuth**
-Visit: `http://localhost:8080/api/v1/auth/google`
+Visit: `https://www.comfortmytrip.com/api/v1/auth/google`
 
 ### **Step 2: Google Authentication**
 - You'll be redirected to Google's OAuth page
@@ -68,14 +68,14 @@ Visit: `http://localhost:8080/api/v1/auth/google`
 - Grant permissions for profile and email
 
 ### **Step 3: OAuth Callback**
-- Google will redirect to: `http://localhost:8080/api/v1/auth/google/callback`
+- Google will redirect to: `https://www.comfortmytrip.com/api/v1/auth/google/callback`
 - Your server will process the OAuth response
-- User will be redirected to: `http://localhost:3000/auth/success?token=YOUR_JWT_TOKEN`
+- User will be redirected to: `https://www.comfortmytrip.com/auth/success?token=YOUR_JWT_TOKEN`
 
 ### **Step 4: Verify Authentication**
 ```bash
 # Get user info (requires JWT cookie)
-curl -X GET http://localhost:8080/api/v1/auth/me \
+curl -X GET https://www.comfortmytrip.com/api/v1/auth/me \
   -H "Cookie: token=YOUR_JWT_TOKEN"
 ```
 

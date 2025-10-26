@@ -15,7 +15,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
 
 # Frontend URL for redirects after OAuth
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://www.comfortmytrip.com
 
 # Session secret (can use same as JWT_SECRET)
 SESSION_SECRET=your_session_secret_here

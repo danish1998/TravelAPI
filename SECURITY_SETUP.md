@@ -18,7 +18,7 @@ Edit the `GOOGLE_OAUTH_CONFIG.env` file and replace the placeholder values with 
 GOOGLE_CLIENT_ID=your_actual_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_actual_google_client_secret_here
 GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://www.comfortmytrip.com
 SESSION_SECRET=your_actual_session_secret_here
 ```
 

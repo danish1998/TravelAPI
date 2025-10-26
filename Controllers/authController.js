@@ -84,13 +84,18 @@ const logout = async (req, res) => {
 const googleCallback = async (req, res, next) => {
     try {
         console.log('OAuth callback received, req.user:', req.user);
+        console.log('OAuth callback query params:', req.query);
         
         if (!req.user) {
-            console.error('No user found in req.user');
-            return res.status(401).json({
-                success: false,
-                message: "Google authentication failed - no user data"
-            });
+            console.error('No user found in req.user - Passport authentication failed');
+            console.error('This could be due to:');
+            console.error('1. Invalid/expired authorization code');
+            console.error('2. Google Client Secret mismatch');
+            console.error('3. Database connection issues');
+            console.error('4. User creation/retrieval failed');
+            
+            const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
+            return res.redirect(`${frontendUrl}/?error=auth_failed`);
         }
 
         const user = req.user;
@@ -106,11 +111,11 @@ const googleCallback = async (req, res, next) => {
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         });
 
-        // Redirect to frontend callback page with JWT token
+        // Redirect directly to homepage after successful authentication
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-        const redirectUrl = `${frontendUrl}/auth/callback?token=${token}`;
+        const redirectUrl = `${frontendUrl}/`;
         
-        console.log('Redirecting to:', redirectUrl);
+        console.log('Redirecting to homepage:', redirectUrl);
         res.redirect(redirectUrl);
     } catch (error) {
         console.error('Google OAuth callback error:', error);

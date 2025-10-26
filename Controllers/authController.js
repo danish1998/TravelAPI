@@ -102,13 +102,13 @@ const googleCallback = async (req, res, next) => {
         });
 
         // Redirect to frontend home page after successful authentication
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
         const redirectUrl = `${frontendUrl}/`;
         
         res.redirect(redirectUrl);
     } catch (error) {
         console.error('Google OAuth callback error:', error);
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
         res.redirect(`${frontendUrl}/?error=${encodeURIComponent(error.message)}`);
     }
 };

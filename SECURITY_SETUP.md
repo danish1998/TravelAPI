@@ -69,3 +69,4 @@ If you accidentally commit secrets:
 If you need help with the OAuth setup, refer to:
 - [Google OAuth 2.0 Documentation](https://developers.google.com/identity/protocols/oauth2)
 - [PROJECT_OAUTH_SETUP.md](./PROJECT_OAUTH_SETUP.md) for detailed setup instructions
+

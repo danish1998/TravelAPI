@@ -17,7 +17,10 @@ router.get("/google", passport.authenticate('google', {
 }));
 
 router.get("/google/callback", 
-    passport.authenticate('google', { failureRedirect: '/' }),
+    passport.authenticate('google', { 
+        failureRedirect: 'https://www.comfortmytrip.com/?error=auth_failed',
+        session: false 
+    }),
     googleCallback
 );
 

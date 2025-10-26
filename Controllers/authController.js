@@ -83,14 +83,19 @@ const logout = async (req, res) => {
 // Google OAuth callback handler
 const googleCallback = async (req, res, next) => {
     try {
+        console.log('OAuth callback received, req.user:', req.user);
+        
         if (!req.user) {
+            console.error('No user found in req.user');
             return res.status(401).json({
                 success: false,
-                message: "Google authentication failed"
+                message: "Google authentication failed - no user data"
             });
         }
 
         const user = req.user;
+        console.log('Processing user:', { id: user._id, email: user.email, name: user.name });
+        
         const token = signToken({ id: user._id, email: user.email });
         
         // Set JWT cookie
@@ -105,6 +110,7 @@ const googleCallback = async (req, res, next) => {
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
         const redirectUrl = `${frontendUrl}/`;
         
+        console.log('Redirecting to:', redirectUrl);
         res.redirect(redirectUrl);
     } catch (error) {
         console.error('Google OAuth callback error:', error);

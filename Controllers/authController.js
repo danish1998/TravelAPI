@@ -224,6 +224,13 @@ const checkAuthStatus = async (req, res, next) => {
 // Google OAuth callback handler
 const googleCallback = async (req, res, next) => {
     try {
+        console.log('Google OAuth callback - req.user:', req.user);
+        
+        if (!req.user) {
+            console.error('No user found in req.user');
+            return res.redirect(`${FRONTEND_URL}/auth/callback?error=no_user`);
+        }
+        
         const user = req.user;
         
         // Generate JWT token
@@ -232,6 +239,8 @@ const googleCallback = async (req, res, next) => {
             email: user.email,
             name: user.name 
         });
+
+        console.log('Generated JWT token for user:', user.email);
 
         // Set JWT cookie
         res.cookie(COOKIE_NAME, token, {

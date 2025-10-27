@@ -9,12 +9,23 @@ passport.use(new GoogleStrategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL || "/api/v1/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        console.log('Google OAuth Profile:', profile);
+        console.log('Google OAuth Profile:', {
+            id: profile.id,
+            displayName: profile.displayName,
+            email: profile.emails?.[0]?.value,
+            photos: profile.photos?.[0]?.value
+        });
+        
+        if (!profile.emails || !profile.emails[0]) {
+            console.error('No email found in Google profile');
+            return done(new Error('No email found in Google profile'), null);
+        }
         
         // Check if user already exists with this Google ID
         let user = await User.findOne({ googleId: profile.id });
         
         if (user) {
+            console.log('Existing Google user found:', user.email);
             // User exists, update profile picture if needed
             if (profile.photos && profile.photos[0] && profile.photos[0].value !== user.profilePicture) {
                 user.profilePicture = profile.photos[0].value;
@@ -27,6 +38,7 @@ passport.use(new GoogleStrategy({
         user = await User.findOne({ email: profile.emails[0].value });
         
         if (user) {
+            console.log('Linking Google account to existing user:', user.email);
             // Link Google account to existing user
             user.googleId = profile.id;
             user.authProvider = 'google';

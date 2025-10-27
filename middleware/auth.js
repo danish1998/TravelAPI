@@ -1,10 +1,27 @@
 const jwt = require("jsonwebtoken");
 
-// Reads JWT from cookie named "token" by default
+// Reads JWT from cookie named "token" by default (iOS WebKit compatible)
 const getTokenFromCookies = (req, cookieName = "token") => {
     if (!req || !req.cookies) return null;
-    const token = req.cookies[cookieName];
-    return typeof token === "string" && token.length > 0 ? token : null;
+    
+    // Try primary cookie first
+    let token = req.cookies[cookieName];
+    if (token && typeof token === "string" && token.length > 0) {
+        return token;
+    }
+    
+    // Try iOS fallback cookies
+    const iosToken = req.cookies[`${cookieName}_ios`];
+    if (iosToken && typeof iosToken === "string" && iosToken.length > 0) {
+        return iosToken;
+    }
+    
+    const altToken = req.cookies[`${cookieName}_alt`];
+    if (altToken && typeof altToken === "string" && altToken.length > 0) {
+        return altToken;
+    }
+    
+    return null;
 };
 
 // Verify middleware: attaches decoded payload to req.user if valid

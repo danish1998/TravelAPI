@@ -1,5 +1,6 @@
 const User = require("../Models/User");
 const { signToken } = require("../middleware/auth");
+const { setIOSCompatibleCookies, clearIOSCompatibleCookies } = require("../middleware/iosAuth");
 
 const COOKIE_NAME = process.env.JWT_COOKIE_NAME || "token";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -44,14 +45,8 @@ const register = async (req, res, next) => {
             name: user.name 
         });
 
-        // Set JWT cookie
-        res.cookie(COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            path: "/",
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
+        // Set JWT cookie with iOS WebKit compatibility
+        setIOSCompatibleCookies(res, token);
 
         res.status(201).json({
             success: true,
@@ -108,14 +103,8 @@ const login = async (req, res, next) => {
             name: user.name 
         });
 
-        // Set JWT cookie
-        res.cookie(COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            path: "/",
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
+        // Set JWT cookie with iOS WebKit compatibility
+        setIOSCompatibleCookies(res, token);
 
         res.status(200).json({
             success: true,
@@ -134,14 +123,9 @@ const login = async (req, res, next) => {
     }
 };
 
-// Logout handler (clears cookie)
+// Logout handler (clears cookie with iOS WebKit compatibility)
 const logout = async (req, res) => {
-    res.clearCookie(COOKIE_NAME, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: "/",
-    });
+    clearIOSCompatibleCookies(res);
     res.json({ success: true, message: "Logged out successfully" });
 };
 
@@ -260,15 +244,8 @@ const googleCallback = async (req, res, next) => {
         console.log('✅ Generated JWT token for user:', user.email);
         console.log('Token length:', token.length);
 
-        // Set JWT cookie
-        res.cookie(COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for production, 'lax' for development
-            path: "/",
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
-            // Remove domain setting for cross-domain cookies
-        });
+        // Set JWT cookie with iOS WebKit compatibility
+        setIOSCompatibleCookies(res, token);
 
         console.log('✅ Cookie set successfully');
         console.log('Redirecting to:', `${FRONTEND_URL}/?token=${token.substring(0, 20)}...`);

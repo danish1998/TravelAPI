@@ -58,7 +58,7 @@ app.use(session({
 
 // Initialize Passport
 app.use(passport.initialize());
-app.use(passport.session());
+// Note: Not using passport.session() since we're using JWT tokens, not sessions
 
 // Routes
 const authRouter = require("./routes/auth-routes");

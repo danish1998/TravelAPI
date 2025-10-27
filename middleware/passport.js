@@ -31,19 +31,7 @@ passport.use(new GoogleStrategy({
     }
 }));
 
-// Serialize user for session
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-});
-
-// Deserialize user from session
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id).select('-passwordHash');
-        done(null, user);
-    } catch (error) {
-        done(error, null);
-    }
-});
+// Note: Not using session serialization since we're using JWT tokens
+// passport.serializeUser and passport.deserializeUser are not needed for JWT authentication
 
 module.exports = passport;

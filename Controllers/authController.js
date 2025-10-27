@@ -49,6 +49,7 @@ const register = async (req, res, next) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: "/",
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
 
@@ -112,6 +113,7 @@ const login = async (req, res, next) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: "/",
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
 
@@ -137,7 +139,7 @@ const logout = async (req, res) => {
     res.clearCookie(COOKIE_NAME, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: "/",
     });
     res.json({ success: true, message: "Logged out successfully" });
@@ -263,6 +265,7 @@ const googleCallback = async (req, res, next) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for production, 'lax' for development
+            path: "/",
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
             // Remove domain setting for cross-domain cookies
         });

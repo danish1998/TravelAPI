@@ -24,6 +24,7 @@ const register = async (req, res, next) => {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             maxAge: 24 * 60 * 60 * 1000,
+            path: "/", // Ensure cookie is available for all paths
         });
 
         return res.status(201).json({ id: user._id, name: user.name, email: user.email, mobile: user.mobile });
@@ -63,6 +64,7 @@ const login = async (req, res, next) => {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             maxAge: 24 * 60 * 60 * 1000,
+            path: "/", // Ensure cookie is available for all paths
         });
 
         return res.json({ id: user._id, name: user.name, email: user.email, mobile: user.mobile });
@@ -76,6 +78,7 @@ const logout = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+        path: "/", // Ensure cookie is cleared from all paths
     });
     res.json({ success: true });
 };

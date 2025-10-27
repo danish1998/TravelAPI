@@ -228,7 +228,7 @@ const googleCallback = async (req, res, next) => {
         
         if (!req.user) {
             console.error('No user found in req.user');
-            return res.redirect(`${FRONTEND_URL}/auth/callback?error=no_user`);
+            return res.redirect(`${FRONTEND_URL}/?error=no_user`);
         }
         
         const user = req.user;
@@ -251,10 +251,10 @@ const googleCallback = async (req, res, next) => {
         });
 
         // Redirect to frontend with token
-        res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`);
+        res.redirect(`${FRONTEND_URL}/?token=${token}`);
     } catch (error) {
         console.error('Google OAuth callback error:', error);
-        res.redirect(`${FRONTEND_URL}/auth/callback?error=oauth_failed`);
+        res.redirect(`${FRONTEND_URL}/?error=oauth_failed`);
     }
 };
 

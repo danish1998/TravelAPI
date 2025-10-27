@@ -44,7 +44,7 @@ router.get('/google', passport.authenticate('google', {
 }));
 
 router.get('/google/callback', 
-    passport.authenticate('google', { failureRedirect: '/auth/callback?error=oauth_failed' }),
+    passport.authenticate('google', { failureRedirect: '/?error=oauth_failed' }),
     googleCallback
 );
 

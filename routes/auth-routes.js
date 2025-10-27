@@ -13,6 +13,19 @@ const { asyncHandler } = require('../middleware/ErrorHandler');
 
 const router = express.Router();
 
+// Debug endpoint to test cookies
+router.get('/test-cookies', (req, res) => {
+    console.log('🍪 All cookies:', req.cookies);
+    console.log('🍪 JWT cookie:', req.cookies.token);
+    
+    res.json({
+        success: true,
+        message: 'Cookie test',
+        cookies: req.cookies,
+        jwtCookie: req.cookies.token ? 'SET' : 'NOT SET'
+    });
+});
+
 // Debug endpoint to test Google OAuth configuration
 router.get('/debug-config', (req, res) => {
     const config = {

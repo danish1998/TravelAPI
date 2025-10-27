@@ -51,9 +51,9 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        sameSite: 'none', // Changed from default to 'none' for cross-domain
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for production, 'lax' for development
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        domain: process.env.NODE_ENV === 'production' ? '.comfortmytrip.com' : undefined
+        // Remove domain setting for cross-domain cookies
     }
 }));
 

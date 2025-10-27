@@ -111,11 +111,11 @@ const googleCallback = async (req, res, next) => {
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
         });
 
-        // Redirect directly to homepage after successful authentication
+        // Redirect to homepage with token parameter for frontend to extract
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-        const redirectUrl = `${frontendUrl}/`;
+        const redirectUrl = `${frontendUrl}/?token=${encodeURIComponent(token)}`;
         
-        console.log('Redirecting to homepage:', redirectUrl);
+        console.log('Redirecting to homepage with token:', redirectUrl);
         res.redirect(redirectUrl);
     } catch (error) {
         console.error('Google OAuth callback error:', error);

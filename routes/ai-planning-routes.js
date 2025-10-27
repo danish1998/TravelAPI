@@ -191,7 +191,7 @@ IMPORTANT REMINDERS:
     try {
       // Use Gemini with higher token limit for detailed responses
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
+        model: "gemini-2.0-flash",
         generationConfig: {
           temperature: 0.9,
           topK: 40,
@@ -235,38 +235,21 @@ IMPORTANT REMINDERS:
       
     } catch (geminiError) {
       console.error('❌ Gemini AI Error:', geminiError.message);
-      console.log('🔄 Falling back to generated travel plan...');
       
-      // Create a comprehensive fallback response
-      trip = {
-        name: `${numberOfDays}-Day ${travelStyle} Trip to ${country}`,
-        description: `A ${numberOfDays}-day ${travelStyle.toLowerCase()} adventure in ${country} perfect for ${groupType.toLowerCase()} travelers. Experience the best of ${country} with carefully curated activities and authentic local experiences.`,
-        estimatedPrice: `₹${budgetNumber ? budgetNumber * numberOfDays : calculateFallbackBudget(numberOfDays, travelStyle)}`,
-        duration: numberOfDays,
-        budget: budget,
-        travelStyle: travelStyle,
-        country: country,
-        interests: interests,
-        groupType: groupType,
-        bestTimeToVisit: [
-          '🌸 Spring (March-May): Pleasant weather and blooming flowers',
-          '☀️ Summer (June-August): Warm weather, perfect for outdoor activities',
-          '🍁 Autumn (September-November): Cool weather and beautiful foliage',
-          '❄️ Winter (December-February): Cool weather, fewer crowds'
-        ],
-        weatherInfo: [
-          '☀️ Summer: 25-35°C (77-95°F)',
-          '🌦️ Monsoon: 20-30°C (68-86°F)',
-          '🌧️ Winter: 10-25°C (50-77°F)',
-          '❄️ Spring: 15-30°C (59-86°F)'
-        ],
-        location: {
-          city: country,
-          coordinates: [0, 0],
-          openStreetMap: `https://www.openstreetmap.org/search?query=${encodeURIComponent(country)}`
-        },
-        itinerary: generateFallbackItinerary(numberOfDays, country, travelStyle)
-      };
+      return res.status(503).json({
+        success: false,
+        message: 'AI service is currently unavailable. Please try again later.',
+        error: geminiError.message,
+        instructions: {
+          geminiSetup: 'Please ensure your Gemini API key is correctly configured',
+          steps: [
+            '1. Check your GEMINI_API_KEY in .env file',
+            '2. Ensure the API key has access to Gemini models',
+            '3. Try again in a few minutes',
+            '4. Contact support if the issue persists'
+          ]
+        }
+      });
     }
 
     // Fetch images from Unsplash
@@ -335,7 +318,7 @@ IMPORTANT REMINDERS:
 
     // Calculate total cost from daily costs
     transformedRecommendations.totalEstimatedCost = transformedRecommendations.itinerary
-      .reduce((total, day) => total + day.estimatedCost, 0);
+      .reduce((total, day) => total + (day.totalCost || day.estimatedCost || 0), 0);
 
     // Create travel plan record
     const travelPlan = new TravelPlan({
@@ -499,90 +482,5 @@ router.put('/plan/:planId/status', async (req, res) => {
   }
 });
 
-/**
- * Calculate fallback budget based on travel style and duration
- */
-function calculateFallbackBudget(numberOfDays, travelStyle) {
-  const baseCostPerDay = {
-    'Budget': 2000,
-    'Mid-range': 4000,
-    'Luxury': 8000,
-    'Premium': 12000
-  };
-  
-  const style = travelStyle || 'Mid-range';
-  const dailyCost = baseCostPerDay[style] || baseCostPerDay['Mid-range'];
-  return dailyCost * numberOfDays;
-}
-
-/**
- * Generate fallback itinerary when AI response parsing fails
- */
-function generateFallbackItinerary(numberOfDays, country, travelStyle) {
-  const itinerary = [];
-  
-  // Define activities based on travel style
-  const activityTemplates = {
-    'Budget': {
-      morning: ['🌅 Local breakfast at street food stalls', '🚶 Walking tour of city center', '🏛️ Free museum visits'],
-      afternoon: ['🏛️ Historical landmarks', '🛍️ Local markets', '🌳 Public parks and gardens'],
-      evening: ['🍽️ Local street food', '🌆 Sunset viewpoints', '🎭 Free cultural shows']
-    },
-    'Mid-range': {
-      morning: ['🌅 Breakfast at local cafes', '🏛️ Guided museum tours', '🚶 Walking tours with guides'],
-      afternoon: ['🎯 Popular attractions', '🍽️ Local restaurants', '🛍️ Shopping districts'],
-      evening: ['🍽️ Traditional restaurants', '🌆 Rooftop bars', '🎭 Cultural performances']
-    },
-    'Luxury': {
-      morning: ['🌅 Gourmet breakfast', '🏛️ Private museum tours', '🚗 Private guided tours'],
-      afternoon: ['🎯 Exclusive attractions', '🍽️ Fine dining', '🛍️ Luxury shopping'],
-      evening: ['🍽️ Michelin-starred restaurants', '🌆 Premium bars', '🎭 VIP cultural events']
-    }
-  };
-  
-  const activities = activityTemplates[travelStyle] || activityTemplates['Mid-range'];
-  
-  for (let day = 1; day <= numberOfDays; day++) {
-    const dayActivities = [];
-    
-    // Morning activity
-    dayActivities.push({
-      time: "Morning",
-      description: activities.morning[Math.floor(Math.random() * activities.morning.length)]
-    });
-    
-    // Afternoon activity
-    if (day === 1) {
-      dayActivities.push({
-        time: "Afternoon",
-        description: `🏛️ Visit the main historical landmarks and cultural sites in ${country}`
-      });
-    } else if (day === numberOfDays) {
-      dayActivities.push({
-        time: "Afternoon",
-        description: `🛍️ Final day shopping and souvenir hunting in local markets`
-      });
-    } else {
-      dayActivities.push({
-        time: "Afternoon",
-        description: activities.afternoon[Math.floor(Math.random() * activities.afternoon.length)]
-      });
-    }
-    
-    // Evening activity
-    dayActivities.push({
-      time: "Evening",
-      description: activities.evening[Math.floor(Math.random() * activities.evening.length)]
-    });
-    
-    itinerary.push({
-      day: day,
-      location: country,
-      activities: dayActivities
-    });
-  }
-  
-  return itinerary;
-}
 
 module.exports = router;

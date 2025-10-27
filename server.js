@@ -61,6 +61,7 @@ app.use(passport.session());
 
 // Routes
 const authRouter = require("./routes/auth-routes");
+const testRouter = require("./routes/test-routes");
 const flightsRouter = require("./routes/flights-routes");
 const hotelsRouter = require("./routes/hotels-routes");
 const locationRouter = require("./routes/location-routes");
@@ -76,6 +77,9 @@ app.use("/api", urlVersioning("v1"));
 
 // Auth routes (no versioning needed for OAuth)
 app.use("/api/v1/auth", authRouter);
+
+// Test routes
+app.use("/api/v1/test", testRouter);
 
 // Other API routes
 app.use("/api/v1/flights", flightsRouter);

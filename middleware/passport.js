@@ -50,6 +50,7 @@ passport.use(new GoogleStrategy({
         }
         
         // Create new user
+        console.log('Creating new Google user:', profile.emails[0].value);
         user = new User({
             googleId: profile.id,
             name: profile.displayName,
@@ -59,7 +60,7 @@ passport.use(new GoogleStrategy({
         });
         
         await user.save();
-        console.log('New Google user created:', user);
+        console.log('New Google user created successfully:', user.email);
         return done(null, user);
         
     } catch (error) {

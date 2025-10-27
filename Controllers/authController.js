@@ -224,14 +224,29 @@ const checkAuthStatus = async (req, res, next) => {
 // Google OAuth callback handler
 const googleCallback = async (req, res, next) => {
     try {
-        console.log('Google OAuth callback - req.user:', req.user);
+        console.log('=== Google OAuth Callback Debug ===');
+        console.log('req.user:', req.user);
+        console.log('req.session:', req.session);
+        console.log('req.cookies:', req.cookies);
+        console.log('Environment:', {
+            NODE_ENV: process.env.NODE_ENV,
+            FRONTEND_URL: process.env.FRONTEND_URL,
+            GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET'
+        });
         
         if (!req.user) {
-            console.error('No user found in req.user');
+            console.error('❌ No user found in req.user');
+            console.error('Passport authentication failed');
             return res.redirect(`${FRONTEND_URL}/?error=no_user`);
         }
         
         const user = req.user;
+        console.log('✅ User found:', {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            authProvider: user.authProvider
+        });
         
         // Generate JWT token
         const token = signToken({ 
@@ -240,20 +255,26 @@ const googleCallback = async (req, res, next) => {
             name: user.name 
         });
 
-        console.log('Generated JWT token for user:', user.email);
+        console.log('✅ Generated JWT token for user:', user.email);
+        console.log('Token length:', token.length);
 
         // Set JWT cookie
         res.cookie(COOKIE_NAME, token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+            sameSite: 'none', // Changed from 'lax' to 'none' for cross-domain
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            domain: process.env.NODE_ENV === 'production' ? '.comfortmytrip.com' : undefined
         });
+
+        console.log('✅ Cookie set successfully');
+        console.log('Redirecting to:', `${FRONTEND_URL}/?token=${token.substring(0, 20)}...`);
 
         // Redirect to frontend with token
         res.redirect(`${FRONTEND_URL}/?token=${token}`);
     } catch (error) {
-        console.error('Google OAuth callback error:', error);
+        console.error('💥 Google OAuth callback error:', error);
+        console.error('Error stack:', error.stack);
         res.redirect(`${FRONTEND_URL}/?error=oauth_failed`);
     }
 };

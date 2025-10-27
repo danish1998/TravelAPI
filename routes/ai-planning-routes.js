@@ -12,6 +12,21 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 router.use(verifyToken());
 
 /**
+ * Convert budget string to number
+ */
+function convertBudgetToNumber(budget) {
+  if (typeof budget === 'number') return budget;
+  
+  const budgetMap = {
+    'Low': 500,
+    'Medium': 1500,
+    'High': 3000,
+    'Luxury': 5000
+  };
+  return budgetMap[budget] || 1000;
+}
+
+/**
  * Generate comprehensive travel plan with AI recommendations and images
  * POST /api/v1/ai-planning/generate-comprehensive-plan
  */
@@ -35,90 +50,187 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
       });
     }
 
+    // Convert budget to number early
+    const budgetNumber = convertBudgetToNumber(budget);
     const unsplashApiKey = process.env.UNSPLASH_ACCESS_KEY;
 
-    // Create comprehensive prompt for travel planning
-    const prompt = `Generate a ${numberOfDays}-day travel itinerary for ${country} based on the following user information:
-      Budget: '${budget}'
-      Interests: '${interests}'
-      TravelStyle: '${travelStyle}'
-      GroupType: '${groupType}'
-      
-      IMPORTANT: For each day's activities, consider realistic costs based on:
-      - Entry fees for museums, galleries, attractions
-      - Transportation costs (trains, buses, taxis)
-      - Meal costs (breakfast, lunch, dinner)
-      - Shopping and miscellaneous expenses
-      - Accommodation costs (if applicable)
-      
-      IMPORTANT: You MUST respond with ONLY valid JSON. Do not include any text before or after the JSON. Do not use markdown formatting. Return the itinerary and realistic estimated price in a clean, non-markdown JSON format with the following structure:
-      {
-      "name": "A descriptive title for the trip",
-      "description": "A brief description of the trip and its highlights not exceeding 100 words",
-      "estimatedPrice": "Realistic total price for the trip in INR, e.g.₹price",
-      "duration": ${numberOfDays},
-      "budget": "${budget}",
-      "travelStyle": "${travelStyle}",
-      "country": "${country}",
-      "interests": ${JSON.stringify(interests)},
-      "groupType": "${groupType}",
-      "bestTimeToVisit": [
-        '🌸 Season (from month to month): reason to visit',
-        '☀️ Season (from month to month): reason to visit',
-        '🍁 Season (from month to month): reason to visit',
-        '❄️ Season (from month to month): reason to visit'
-      ],
-      "weatherInfo": [
-        '☀️ Season: temperature range in Celsius (temperature range in Fahrenheit)',
-        '🌦️ Season: temperature range in Celsius (temperature range in Fahrenheit)',
-        '🌧️ Season: temperature range in Celsius (temperature range in Fahrenheit)',
-        '❄️ Season: temperature range in Celsius (temperature range in Fahrenheit)'
-      ],
-      "location": {
-        "city": "name of the city or region",
-        "coordinates": [latitude, longitude],
-        "openStreetMap": "link to open street map"
-      },
-      "itinerary": [
-      {
-        "day": 1,
-        "location": "City/Region Name",
-        "activities": [
-          {"time": "Morning", "description": "🏰 Visit the local historic castle and enjoy a scenic walk"},
-          {"time": "Afternoon", "description": "🖼️ Explore a famous art museum with a guided tour"},
-          {"time": "Evening", "description": "🍷 Dine at a rooftop restaurant with local wine"}
-        ]
-      }
-      ]
-  }`;
+    // Create enhanced prompt for detailed, location-specific travel planning
+    const prompt = `You are an expert travel planner. Generate a detailed ${numberOfDays}-day travel itinerary for ${country} with SPECIFIC locations, attractions, and ACCURATE cost breakdowns.
 
-    // Try to generate content using Gemini, with fallback
+USER PREFERENCES:
+- Budget Level: ${budget}
+- Travel Style: ${travelStyle}
+- Interests: ${Array.isArray(interests) ? interests.join(', ') : interests}
+- Group Type: ${groupType}
+- Number of Days: ${numberOfDays}
+
+CRITICAL REQUIREMENTS:
+
+1. SPECIFIC LOCATIONS & ATTRACTIONS:
+   - Mention REAL, FAMOUS landmarks and attractions for ${country}
+   - For example, if Delhi: Jama Masjid, Red Fort, India Gate, Qutub Minar, etc.
+   - Include the ACTUAL names of popular restaurants, markets, temples, museums
+   - Provide specific neighborhood/area names where activities take place
+
+2. DETAILED COST BREAKDOWN FOR EACH ACTIVITY:
+   - Entry/Admission fees (actual current prices in INR)
+   - Transportation costs (metro/taxi/auto from previous location in INR)
+   - Meal costs (breakfast/lunch/dinner at specific price ranges in INR)
+   - Shopping/miscellaneous estimated costs in INR
+   - Total cost for each time slot (Morning/Afternoon/Evening)
+
+3. REALISTIC PRICING:
+   - Research and provide CURRENT, ACCURATE prices for ${country}
+   - Match prices to the ${budget} budget level and ${travelStyle} travel style
+   - Budget style: local transport, street food, free/cheap attractions
+   - Luxury style: private transport, fine dining, premium experiences
+
+4. TIME MANAGEMENT:
+   - Include realistic travel time between locations
+   - Suggest optimal visiting hours for each attraction
+   - Account for opening/closing times
+
+YOU MUST RESPOND WITH ONLY VALID JSON. No markdown, no code blocks, no explanatory text.
+
+JSON STRUCTURE:
+{
+  "name": "Descriptive trip title with destination",
+  "description": "Brief 2-3 sentence description highlighting main experiences (max 100 words)",
+  "estimatedPrice": "₹[TOTAL_AMOUNT]",
+  "duration": ${numberOfDays},
+  "budget": "${budget}",
+  "travelStyle": "${travelStyle}",
+  "country": "${country}",
+  "interests": ${JSON.stringify(interests)},
+  "groupType": "${groupType}",
+  "bestTimeToVisit": [
+    "🌸 Spring (March-May): Pleasant weather, blooming gardens, ideal for sightseeing",
+    "☀️ Summer (June-August): Warm weather, peak tourist season",
+    "🍁 Autumn (September-November): Cool comfortable weather, festive season",
+    "❄️ Winter (December-February): Cool to cold, great for exploring"
+  ],
+  "weatherInfo": [
+    "☀️ Summer: 25-40°C (77-104°F) - Hot and humid",
+    "🌦️ Monsoon: 25-35°C (77-95°F) - Rainy season",
+    "🍁 Autumn: 20-30°C (68-86°F) - Pleasant weather",
+    "❄️ Winter: 8-25°C (46-77°F) - Cool and dry"
+  ],
+  "location": {
+    "city": "${country}",
+    "coordinates": [latitude, longitude],
+    "openStreetMap": "https://www.openstreetmap.org/search?query=${encodeURIComponent(country)}"
+  },
+  "itinerary": [
+    {
+      "day": 1,
+      "location": "Specific Area/District Name",
+      "activities": [
+        {
+          "time": "Morning (9:00 AM - 12:00 PM)",
+          "description": "🕌 Visit [SPECIFIC ATTRACTION NAME] - [Brief description of what to see/do]",
+          "cost_breakdown": {
+            "entry_fee": 50,
+            "transport": 80,
+            "breakfast": 150,
+            "misc": 50,
+            "total": 330
+          },
+          "tips": "Best to visit early to avoid crowds. Photography allowed."
+        },
+        {
+          "time": "Afternoon (12:00 PM - 5:00 PM)",
+          "description": "🏛️ Explore [SPECIFIC ATTRACTION NAME] - [What makes it special]",
+          "cost_breakdown": {
+            "entry_fee": 100,
+            "transport": 60,
+            "lunch": 300,
+            "misc": 100,
+            "total": 560
+          },
+          "tips": "Carry water bottle. Guide services available for ₹200."
+        },
+        {
+          "time": "Evening (5:00 PM - 9:00 PM)",
+          "description": "🌆 Experience [SPECIFIC LOCATION] - [Evening activities]",
+          "cost_breakdown": {
+            "entry_fee": 0,
+            "transport": 100,
+            "dinner": 500,
+            "misc": 150,
+            "total": 750
+          },
+          "tips": "Beautiful sunset views. Many street food options available."
+        }
+      ],
+      "daily_total": 1640,
+      "accommodation": {
+        "type": "${travelStyle === 'Budget' ? 'Budget hotel/Hostel' : travelStyle === 'Luxury' ? 'Luxury hotel' : 'Mid-range hotel'}",
+        "estimated_cost": ${travelStyle === 'Budget' ? 800 : travelStyle === 'Luxury' ? 5000 : 2000}
+      }
+    }
+  ],
+  "budget_summary": {
+    "accommodation_total": "₹[AMOUNT]",
+    "activities_total": "₹[AMOUNT]",
+    "food_total": "₹[AMOUNT]",
+    "transport_total": "₹[AMOUNT]",
+    "miscellaneous_total": "₹[AMOUNT]",
+    "grand_total": "₹[AMOUNT]"
+  }
+}
+
+IMPORTANT REMINDERS:
+- Use REAL attraction names for ${country}
+- Provide ACCURATE current prices in INR
+- Include detailed cost breakdowns for EVERY activity
+- Each day should have Morning, Afternoon, and Evening activities
+- Calculate realistic daily totals and grand total
+- Return ONLY the JSON object, no other text`;
+
     let trip;
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      // Use Gemini with higher token limit for detailed responses
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: {
+          temperature: 0.9,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 8192, // Increased for detailed responses
+        }
+      });
       
-      // Add system instruction for JSON format
-      const systemInstruction = {
-        role: "system",
-        parts: [{ text: "You are a travel planning assistant. You MUST respond with ONLY valid JSON format. Do not include any explanatory text, markdown formatting, or code blocks. Just return the JSON object directly." }]
-      };
+      console.log(`🤖 Generating detailed AI itinerary for ${country}...`);
       
-      const result = await model.generateContent([systemInstruction, prompt]);
+      const result = await model.generateContent(prompt);
       let aiResponse = result.response.text();
       
       // Clean the response - remove markdown code blocks if present
+      aiResponse = aiResponse.trim();
       if (aiResponse.includes('```json')) {
         aiResponse = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       }
+      if (aiResponse.includes('```')) {
+        aiResponse = aiResponse.replace(/```\n?/g, '');
+      }
+      
+      // Remove any leading/trailing whitespace or newlines
+      aiResponse = aiResponse.trim();
       
       // Try to parse JSON
       try {
         trip = JSON.parse(aiResponse);
-        console.log('✅ Successfully generated AI travel plan');
+        console.log('✅ Successfully generated detailed AI travel plan with specific locations and costs');
       } catch (parseError) {
-        console.error('JSON Parse Error:', parseError.message);
-        console.error('AI Response:', aiResponse.substring(0, 200) + '...');
-        throw new Error('AI returned invalid JSON format');
+        console.error('❌ JSON Parse Error:', parseError.message);
+        console.error('AI Response (first 1000 chars):', aiResponse.substring(0, 1000));
+        
+        // Return error asking to try again
+        return res.status(500).json({
+          success: false,
+          message: 'AI generated invalid response format. Please try again.',
+          error: 'Failed to parse AI response'
+        });
       }
       
     } catch (geminiError) {
@@ -161,18 +273,19 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
     let imageUrls = [];
     if (unsplashApiKey) {
       try {
-        const searchQuery = `${country} ${Array.isArray(interests) ? interests.join(' ') : interests} ${travelStyle}`;
-        const unsplashUrl = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&client_id=${unsplashApiKey}&per_page=3`;
+        const searchQuery = `${country} ${Array.isArray(interests) ? interests.join(' ') : interests} travel landmarks`;
+        const unsplashUrl = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&client_id=${unsplashApiKey}&per_page=5`;
         
         const imageResponse = await fetch(unsplashUrl);
         const imageData = await imageResponse.json();
         
         if (imageData.results && Array.isArray(imageData.results)) {
           imageUrls = imageData.results
-            .slice(0, 3)
+            .slice(0, 5)
             .map((result) => result.urls?.regular || null)
             .filter(url => url !== null);
         }
+        console.log(`📸 Fetched ${imageUrls.length} images from Unsplash`);
       } catch (imageError) {
         console.warn('❌ Failed to fetch images from Unsplash:', imageError.message);
       }
@@ -180,114 +293,44 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
       console.warn('⚠️ Unsplash API key not configured');
     }
 
-    // Convert budget string to number if possible
-    let budgetNumber = null;
-    if (budget) {
-      if (typeof budget === 'string') {
-        // Convert budget strings to approximate numbers
-        const budgetMap = {
-          'Low': 500,
-          'Medium': 1500,
-          'High': 3000,
-          'Luxury': 5000
-        };
-        budgetNumber = budgetMap[budget] || 1000;
-      } else {
-        budgetNumber = budget;
-      }
-    }
-
-    // Function to calculate realistic daily costs based on activities and location
-    const calculateDailyCost = (activities, dayNumber, country, travelStyle) => {
-      let baseCost = 0;
-      const isBudget = travelStyle?.toLowerCase().includes('budget');
-      const isLuxury = travelStyle?.toLowerCase().includes('luxury');
-      
-      // Base cost multipliers by country (approximate daily costs in INR)
-      const countryCosts = {
-        'italy': { budget: 3000, mid: 5000, luxury: 8000 },
-        'france': { budget: 3500, mid: 6000, luxury: 10000 },
-        'spain': { budget: 2500, mid: 4000, luxury: 7000 },
-        'japan': { budget: 4000, mid: 7000, luxury: 12000 },
-        'thailand': { budget: 1500, mid: 3000, luxury: 5000 },
-        'india': { budget: 1000, mid: 2000, luxury: 4000 },
-        'mumbai': { budget: 1200, mid: 2500, luxury: 4500 }, // Mumbai specific costs
-        'delhi': { budget: 1000, mid: 2000, luxury: 4000 },
-        'bangalore': { budget: 1200, mid: 2500, luxury: 4500 },
-        'goa': { budget: 1500, mid: 3000, luxury: 5000 },
-        'usa': { budget: 5000, mid: 8000, luxury: 15000 },
-        'uk': { budget: 4000, mid: 7000, luxury: 12000 },
-        'australia': { budget: 4500, mid: 7500, luxury: 13000 },
-        'default': { budget: 2000, mid: 3500, luxury: 6000 }
-      };
-      
-      const countryData = countryCosts[country?.toLowerCase()] || countryCosts['default'];
-      
-      if (isBudget) {
-        baseCost = countryData.budget;
-      } else if (isLuxury) {
-        baseCost = countryData.luxury;
-      } else {
-        baseCost = countryData.mid;
-      }
-      
-      // Activity-based cost adjustments
-      let activityMultiplier = 1;
-      const activityText = activities.join(' ').toLowerCase();
-      
-      // High-cost activities
-      if (activityText.includes('museum') || activityText.includes('gallery') || activityText.includes('vatican')) {
-        activityMultiplier += 0.3;
-      }
-      if (activityText.includes('restaurant') || activityText.includes('dining') || activityText.includes('steak')) {
-        activityMultiplier += 0.4;
-      }
-      if (activityText.includes('train') || activityText.includes('transport')) {
-        activityMultiplier += 0.2;
-      }
-      if (activityText.includes('shopping') || activityText.includes('market')) {
-        activityMultiplier += 0.1;
-      }
-      
-      // Day-specific variations (first and last days might be different)
-      if (dayNumber === 1) {
-        activityMultiplier += 0.2; // Arrival day costs
-      }
-      if (activityText.includes('depart') || activityText.includes('airport')) {
-        activityMultiplier += 0.1; // Departure day
-      }
-      
-      // Add some randomness to avoid monotonous pricing (±15%)
-      const randomVariation = 0.85 + (Math.random() * 0.3);
-      
-      return Math.round(baseCost * activityMultiplier * randomVariation);
-    };
-
     // Transform AI response to match TravelPlan schema
     const transformedRecommendations = {
       itinerary: trip.itinerary?.map(day => {
-        const activities = day.activities?.map(activity => 
-          `${activity.time}: ${activity.description}`
-        ) || [];
+        // Extract activities with detailed cost information
+        const activities = day.activities?.map(activity => {
+          const costInfo = activity.cost_breakdown ? 
+            ` [Total: ₹${activity.cost_breakdown.total} - Entry: ₹${activity.cost_breakdown.entry_fee}, Transport: ₹${activity.cost_breakdown.transport}, Food: ₹${activity.cost_breakdown.breakfast || activity.cost_breakdown.lunch || activity.cost_breakdown.dinner || 0}, Misc: ₹${activity.cost_breakdown.misc || 0}]` : '';
+          const tips = activity.tips ? ` | Tips: ${activity.tips}` : '';
+          return `${activity.time}: ${activity.description}${costInfo}${tips}`;
+        }) || [];
         
-        // Calculate realistic daily cost based on activities
-        const dailyCost = calculateDailyCost(activities, day.day, country, travelStyle);
+        // Calculate day's estimated cost from activities
+        const dailyCost = day.daily_total || 
+          (day.activities?.reduce((sum, act) => sum + (act.cost_breakdown?.total || 0), 0) || 0);
+        
+        // Add accommodation cost
+        const accommodationCost = day.accommodation?.estimated_cost || 0;
+        const totalDailyCost = dailyCost + accommodationCost;
         
         return {
           day: day.day,
+          location: day.location,
           activities: activities,
-          estimatedCost: dailyCost,
-          timeRequired: 'Full day'
+          estimatedCost: totalDailyCost,
+          timeRequired: 'Full day',
+          accommodation: day.accommodation ? 
+            `${day.accommodation.type} - ₹${day.accommodation.estimated_cost}` : null
         };
       }) || [],
-      totalEstimatedCost: 0, // Will be calculated below
+      totalEstimatedCost: 0,
       bestTimeToVisit: Array.isArray(trip.bestTimeToVisit) ? 
         trip.bestTimeToVisit.join('; ') : trip.bestTimeToVisit || '',
       weatherInfo: Array.isArray(trip.weatherInfo) ? 
         trip.weatherInfo.join('; ') : trip.weatherInfo || '',
       travelTips: trip.travelTips || [],
       mustVisitPlaces: trip.mustVisitPlaces || [],
-      alternativeDestinations: trip.alternativeDestinations || []
+      alternativeDestinations: trip.alternativeDestinations || [],
+      budgetSummary: trip.budget_summary || null
     };
 
     // Calculate total cost from daily costs
@@ -304,28 +347,31 @@ router.post('/generate-comprehensive-plan', async (req, res) => {
       aiRecommendations: transformedRecommendations,
       imageUrls: imageUrls,
       status: 'draft',
-      // Save AI-generated trip data
       name: trip.name || null,
       description: trip.description || null,
-      estimatedPrice: trip.estimatedPrice || null,
+      estimatedPrice: trip.estimatedPrice || `₹${transformedRecommendations.totalEstimatedCost}`,
       travelStyle: travelStyle || null,
       groupType: groupType || null
     });
 
     await travelPlan.save();
 
+    console.log(`✅ Travel plan saved with ID: ${travelPlan._id}`);
+    console.log(`💰 Total estimated cost: ₹${transformedRecommendations.totalEstimatedCost}`);
+
     res.status(200).json({
       success: true,
-      message: 'Comprehensive travel plan generated successfully',
+      message: 'Comprehensive travel plan generated successfully with detailed costs',
       data: {
         planId: travelPlan._id,
         trip: trip,
-        imageUrls: imageUrls
+        imageUrls: imageUrls,
+        totalCost: transformedRecommendations.totalEstimatedCost
       }
     });
 
   } catch (error) {
-    console.error('Error generating comprehensive travel plan:', error);
+    console.error('❌ Error generating comprehensive travel plan:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate travel plan',
@@ -351,7 +397,6 @@ router.get('/plan/:planId', async (req, res) => {
       });
     }
 
-    // Format the response with proper currency display
     const formattedPlan = {
       ...plan.toObject(),
       budget: plan.budget ? `₹${plan.budget}` : null,
@@ -385,7 +430,6 @@ router.get('/plans', async (req, res) => {
       { userId: req.user.id }
     ).sort({ createdAt: -1 });
 
-    // Format all plans with proper currency display
     const formattedPlans = plans.map(plan => ({
       ...plan.toObject(),
       budget: plan.budget ? `₹${plan.budget}` : null,
@@ -431,7 +475,6 @@ router.put('/plan/:planId/status', async (req, res) => {
       });
     }
 
-    // Format the response with proper currency display
     const formattedPlan = {
       ...plan.toObject(),
       budget: plan.budget ? `₹${plan.budget}` : null,

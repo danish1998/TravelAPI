@@ -86,11 +86,17 @@ const logout = async (req, res) => {
 // Google OAuth callback handler
 const googleCallback = async (req, res, next) => {
     try {
-        console.log('OAuth callback received, req.user:', req.user);
-        console.log('OAuth callback query params:', req.query);
+        console.log('=== OAuth Callback Debug ===');
+        console.log('req.user:', req.user);
+        console.log('req.query:', req.query);
+        console.log('Environment check:');
+        console.log('- GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
+        console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
+        console.log('- MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
+        console.log('===========================');
         
         if (!req.user) {
-            console.error('No user found in req.user - Passport authentication failed');
+            console.error('❌ No user found in req.user - Passport authentication failed');
             console.error('This could be due to:');
             console.error('1. Invalid/expired authorization code');
             console.error('2. Google Client Secret mismatch');
@@ -98,7 +104,7 @@ const googleCallback = async (req, res, next) => {
             console.error('4. User creation/retrieval failed');
             
             const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-            return res.redirect(`${frontendUrl}/?error=auth_failed`);
+            return res.redirect(`${frontendUrl}/?error=auth_failed&details=no_user`);
         }
 
         const user = req.user;
@@ -121,9 +127,12 @@ const googleCallback = async (req, res, next) => {
         console.log('Redirecting to homepage with token:', redirectUrl);
         res.redirect(redirectUrl);
     } catch (error) {
-        console.error('Google OAuth callback error:', error);
+        console.error('❌ Google OAuth callback error:', error);
+        console.error('Error stack:', error.stack);
+        
         const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-        res.redirect(`${frontendUrl}/?error=${encodeURIComponent(error.message)}`);
+        const errorMessage = encodeURIComponent(error.message);
+        res.redirect(`${frontendUrl}/?error=auth_failed&details=${errorMessage}`);
     }
 };
 

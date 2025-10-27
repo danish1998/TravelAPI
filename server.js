@@ -20,12 +20,11 @@ const { configureCors } = require("./config/corsConfig");
 const { createBasicRateLimiter } = require("./middleware/rateLimiting");
 const { urlVersioning } = require("./middleware/apiVersioning");
 const { globalErrorhandler } = require("./middleware/ErrorHandler");
-const { connectDB } = require("./helpers/ConnectDB"); // <-- import connectDB
+const { connectDB } = require("./helpers/ConnectDB");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const passport = require("./middleware/passport");
 const { verifyToken } = require("./middleware/auth");
-const itemsRouter = require("./routes/item-routes");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -44,9 +43,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Session configuration for OAuth
+// Session configuration for Passport
 app.use(session({
-    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'your-session-secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -58,7 +57,7 @@ app.use(session({
 
 // Initialize Passport
 app.use(passport.initialize());
-// Note: Not using passport.session() since we're using JWT tokens, not sessions
+app.use(passport.session());
 
 // Routes
 const authRouter = require("./routes/auth-routes");
@@ -72,12 +71,13 @@ const airportsRouter = require("./routes/airports-routes");
 const aiPlanningRouter = require("./routes/ai-planning-routes");
 const favoritesRouter = require("./routes/favorites-routes");
 
-// OAuth callback route without versioning (Google redirects here)
-app.use("/api/auth", authRouter);
-
 // Apply API versioning to all /api routes
 app.use("/api", urlVersioning("v1"));
 
+// Auth routes (no versioning needed for OAuth)
+app.use("/api/v1/auth", authRouter);
+
+// Other API routes
 app.use("/api/v1/flights", flightsRouter);
 app.use("/api/v1/hotels", hotelsRouter);
 app.use("/api/v1/location", locationRouter);
@@ -87,7 +87,6 @@ app.use("/api/v1/viator", viatorRouter);
 app.use("/api/v1/airports", airportsRouter);
 app.use("/api/v1/ai-planning", aiPlanningRouter);
 app.use("/api/v1/favorites", favoritesRouter);
-app.use("/api/v1/auth", authRouter);
 app.get("/api/v1", (req, res) => {
   res.json({ message: "Travel API v1 is running!" });
 });

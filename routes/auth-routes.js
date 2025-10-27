@@ -1,33 +1,35 @@
-const express = require("express");
-const passport = require("../middleware/passport");
-const { register, login, logout, googleCallback, getCurrentUser, checkAuthStatus } = require("../Controllers/authController");
-const { verifyToken } = require("../middleware/auth");
+const express = require('express');
+const passport = require('../middleware/passport');
+const { 
+    register, 
+    login, 
+    logout, 
+    getCurrentUser, 
+    checkAuthStatus, 
+    googleCallback 
+} = require('../Controllers/authController');
+const { verifyToken } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/ErrorHandler');
 
 const router = express.Router();
 
-// Local authentication routes
-router.post("/register", register);
-// If a valid token cookie already exists, login returns the current user
-router.post("/login", verifyToken({ required: false }), login);
-router.get("/logout", logout);
+// Public routes (no authentication required)
+router.post('/register', asyncHandler(register));
+router.post('/login', asyncHandler(login));
+router.get('/logout', logout);
+router.get('/status', asyncHandler(checkAuthStatus));
 
 // Google OAuth routes
-router.get("/google", passport.authenticate('google', {
-    scope: ['profile', 'email']
+router.get('/google', passport.authenticate('google', { 
+    scope: ['profile', 'email'] 
 }));
 
-router.get("/google/callback", 
-    passport.authenticate('google', { 
-        failureRedirect: 'https://www.comfortmytrip.com/?error=auth_failed',
-        session: false 
-    }),
+router.get('/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/auth/callback?error=oauth_failed' }),
     googleCallback
 );
 
-// Get current user info (requires authentication)
-router.get("/me", verifyToken(), getCurrentUser);
-
-// Check authentication status (public endpoint - doesn't require authentication)
-router.get("/status", verifyToken({ required: false }), checkAuthStatus);
+// Protected routes (authentication required)
+router.get('/me', verifyToken(), asyncHandler(getCurrentUser));
 
 module.exports = router;

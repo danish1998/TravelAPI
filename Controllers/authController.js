@@ -2,141 +2,148 @@ const User = require("../Models/User");
 const { signToken } = require("../middleware/auth");
 
 const COOKIE_NAME = process.env.JWT_COOKIE_NAME || "token";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
+// Register new user
 const register = async (req, res, next) => {
     try {
         const { name, email, mobile, password } = req.body;
-        if (!email || !mobile || !password) {
-            return res.status(400).json({ message: "Email, mobile and password are required" });
+
+        // Validate required fields
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Name, email, and password are required"
+            });
         }
 
-        const existing = await User.findOne({ $or: [{ email }, { mobile }] });
-        if (existing) {
-            return res.status(409).json({ message: "Email or mobile already in use" });
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: "User already exists with this email"
+            });
         }
 
-        const passwordHash = await User.hashPassword(password);
-        const user = await User.create({ name, email, mobile, passwordHash });
-
-        const token = signToken({ id: user._id, email: user.email });
-        res.cookie(COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 24 * 60 * 60 * 1000,
-            path: "/", // Ensure cookie is available for all paths
+        // Create new user
+        const user = new User({
+            name,
+            email,
+            mobile,
+            password,
+            authProvider: 'local'
         });
 
-        return res.status(201).json({ id: user._id, name: user.name, email: user.email, mobile: user.mobile });
-    } catch (err) {
-        next(err);
-    }
-};
+        await user.save();
 
-const login = async (req, res, next) => {
-    try {
-        // If token is already valid (verifyToken with required:false), return current user
-        if (req.user && req.user.id) {
-            const existing = await User.findById(req.user.id).select("name email mobile");
-            if (existing) {
-                return res.json({ id: existing._id, name: existing.name, email: existing.email, mobile: existing.mobile });
-            }
-        }
-
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
-        }
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(401).json({ message: "Invalid credentials" });
-        }
-
-        const ok = await user.comparePassword(password);
-        if (!ok) {
-            return res.status(401).json({ message: "Invalid credentials" });
-        }
-
-        const token = signToken({ id: user._id, email: user.email });
-        res.cookie(COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 24 * 60 * 60 * 1000,
-            path: "/", // Ensure cookie is available for all paths
+        // Generate JWT token
+        const token = signToken({ 
+            id: user._id, 
+            email: user.email,
+            name: user.name 
         });
 
-        return res.json({ id: user._id, name: user.name, email: user.email, mobile: user.mobile });
-    } catch (err) {
-        next(err);
-    }
-};
-
-const logout = async (req, res) => {
-    res.clearCookie(COOKIE_NAME, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/", // Ensure cookie is cleared from all paths
-    });
-    res.json({ success: true });
-};
-
-// Google OAuth callback handler
-const googleCallback = async (req, res, next) => {
-    try {
-        console.log('=== OAuth Callback Debug ===');
-        console.log('req.user:', req.user);
-        console.log('req.query:', req.query);
-        console.log('Environment check:');
-        console.log('- GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
-        console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
-        console.log('- MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
-        console.log('===========================');
-        
-        if (!req.user) {
-            console.error('❌ No user found in req.user - Passport authentication failed');
-            console.error('This could be due to:');
-            console.error('1. Invalid/expired authorization code');
-            console.error('2. Google Client Secret mismatch');
-            console.error('3. Database connection issues');
-            console.error('4. User creation/retrieval failed');
-            
-            const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-            return res.redirect(`${frontendUrl}/?error=auth_failed&details=no_user`);
-        }
-
-        const user = req.user;
-        console.log('Processing user:', { id: user._id, email: user.email, name: user.name });
-        
-        const token = signToken({ id: user._id, email: user.email });
-        
         // Set JWT cookie
         res.cookie(COOKIE_NAME, token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
 
-        // Redirect to homepage with token parameter for frontend to extract
-        const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-        const redirectUrl = `${frontendUrl}/?token=${encodeURIComponent(token)}`;
-        
-        console.log('Redirecting to homepage with token:', redirectUrl);
-        res.redirect(redirectUrl);
+        res.status(201).json({
+            success: true,
+            message: "User registered successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                authProvider: user.authProvider,
+                profilePicture: user.profilePicture
+            }
+        });
     } catch (error) {
-        console.error('❌ Google OAuth callback error:', error);
-        console.error('Error stack:', error.stack);
-        
-        const frontendUrl = process.env.FRONTEND_URL || 'https://www.comfortmytrip.com';
-        const errorMessage = encodeURIComponent(error.message);
-        res.redirect(`${frontendUrl}/?error=auth_failed&details=${errorMessage}`);
+        next(error);
     }
 };
 
-// Get current user info (for both local and OAuth users)
+// Login user
+const login = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        // Validate required fields
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required"
+            });
+        }
+
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        // Check password
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        // Generate JWT token
+        const token = signToken({ 
+            id: user._id, 
+            email: user.email,
+            name: user.name 
+        });
+
+        // Set JWT cookie
+        res.cookie(COOKIE_NAME, token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                authProvider: user.authProvider,
+                profilePicture: user.profilePicture
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Logout handler (clears cookie)
+const logout = async (req, res) => {
+    res.clearCookie(COOKIE_NAME, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: "lax",
+        path: "/",
+    });
+    res.json({ success: true, message: "Logged out successfully" });
+};
+
+// Get current user info
 const getCurrentUser = async (req, res, next) => {
     try {
         if (!req.user) {
@@ -147,7 +154,7 @@ const getCurrentUser = async (req, res, next) => {
             });
         }
 
-        const user = await User.findById(req.user.id).select('name email mobile authProvider profilePicture');
+        const user = await User.findById(req.user.id).select('name email mobile authProvider profilePicture googleId');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -165,7 +172,8 @@ const getCurrentUser = async (req, res, next) => {
                 email: user.email,
                 mobile: user.mobile,
                 authProvider: user.authProvider,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                googleId: user.googleId
             }
         });
     } catch (error) {
@@ -185,7 +193,7 @@ const checkAuthStatus = async (req, res, next) => {
             });
         }
 
-        const user = await User.findById(req.user.id).select('name email mobile authProvider profilePicture');
+        const user = await User.findById(req.user.id).select('name email mobile authProvider profilePicture googleId');
         if (!user) {
             return res.json({
                 success: true,
@@ -204,7 +212,8 @@ const checkAuthStatus = async (req, res, next) => {
                 email: user.email,
                 mobile: user.mobile,
                 authProvider: user.authProvider,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                googleId: user.googleId
             }
         });
     } catch (error) {
@@ -212,4 +221,39 @@ const checkAuthStatus = async (req, res, next) => {
     }
 };
 
-module.exports = { register, login, logout, googleCallback, getCurrentUser, checkAuthStatus };
+// Google OAuth callback handler
+const googleCallback = async (req, res, next) => {
+    try {
+        const user = req.user;
+        
+        // Generate JWT token
+        const token = signToken({ 
+            id: user._id, 
+            email: user.email,
+            name: user.name 
+        });
+
+        // Set JWT cookie
+        res.cookie(COOKIE_NAME, token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        });
+
+        // Redirect to frontend with token
+        res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`);
+    } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        res.redirect(`${FRONTEND_URL}/auth/callback?error=oauth_failed`);
+    }
+};
+
+module.exports = { 
+    register, 
+    login, 
+    logout, 
+    getCurrentUser, 
+    checkAuthStatus, 
+    googleCallback 
+};

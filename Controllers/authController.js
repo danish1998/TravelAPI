@@ -51,6 +51,7 @@ const register = async (req, res, next) => {
         res.status(201).json({
             success: true,
             message: "User registered successfully",
+            token, // include JWT token for iOS/localStorage fallback
             user: {
                 id: user._id,
                 name: user.name,
@@ -109,6 +110,7 @@ const login = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: "Login successful",
+            token, // include JWT token for iOS/localStorage fallback
             user: {
                 id: user._id,
                 name: user.name,

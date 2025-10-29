@@ -42,7 +42,16 @@ const verifyToken = (options = {}) => {
                 });
             }
 
-            const token = getTokenFromCookies(req, cookieName);
+            // 1) Try cookie-based token (primary)
+            let token = getTokenFromCookies(req, cookieName);
+
+            // 2) Fallback: Try Authorization header (Bearer <token>) to support iOS when cookies fail
+            if (!token && req.headers && typeof req.headers.authorization === 'string') {
+                const authHeader = req.headers.authorization;
+                if (authHeader.toLowerCase().startsWith('bearer ')) {
+                    token = authHeader.slice(7).trim();
+                }
+            }
 
             if (!token) {
                 if (required) {

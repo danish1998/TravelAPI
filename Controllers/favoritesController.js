@@ -5,12 +5,6 @@ const { asyncHandler } = require("../middleware/ErrorHandler");
 // Add item to favorites
 const addToFavorites = async (req, res) => {
   try {
-    console.log('🔐 Authentication debug:', {
-      hasUser: !!req.user,
-      userData: req.user,
-      userId: req.user?.id
-    });
-    
     const userId = req.user.id; // From JWT token
     const favoriteData = req.body;
 

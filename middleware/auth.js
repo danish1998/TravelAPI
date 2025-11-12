@@ -80,7 +80,7 @@ const verifyToken = (options = {}) => {
 const signToken = (payload, options = {}) => {
     const secret = process.env.JWT_SECRET;
     const {
-        expiresIn = process.env.JWT_EXPIRES_IN || "1d",
+        expiresIn = process.env.JWT_EXPIRES_IN || "30d",
         algorithm = process.env.JWT_ALG || "HS256",
     } = options;
     return jwt.sign(payload, secret, { expiresIn, algorithm });

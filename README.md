@@ -119,7 +119,7 @@ MONGODB_URI=mongodb://localhost:27017/travelapi
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-here
 JWT_COOKIE_NAME=token
-JWT_EXPIRES_IN=1d
+JWT_EXPIRES_IN=30d
 JWT_ALG=HS256
 
 # Amadeus API Configuration (Required for flights/hotels)

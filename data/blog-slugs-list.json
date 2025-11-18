@@ -1,0 +1,247 @@
+{
+  "total": 40,
+  "slugs": [
+    "things-to-do-in-lisbon-portugal",
+    "kyoto-japan-travel-guide",
+    "santorini-greece-travel-guide",
+    "bali-trip-under-80000",
+    "rome-italy-travel-guide",
+    "marrakech-morocco-travel-guide",
+    "new-york-city-travel-guide",
+    "cape-town-south-africa-travel-guide",
+    "reykjavik-iceland-travel-guide",
+    "sydney-australia-travel-guide",
+    "taj-mahal-agra-travel-guide",
+    "jaipur-rajasthan-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "goa-trip-under-50000",
+    "kerala-backwaters-travel-guide",
+    "ladakh-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "jaipur-rajasthan-travel-guide",
+    "mysore-karnataka-travel-guide",
+    "darjeeling-west-bengal-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "majuli-assam-travel-guide",
+    "mysore-karnataka-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "mysore-karnataka-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "varanasi-uttar-pradesh-travel-guide",
+    "loktak-lake-manipur-travel-guide",
+    "ladakh-travel-guide",
+    "paris-france-travel-guide",
+    "rome-italy-travel-guide",
+    "barcelona-spain-travel-guide",
+    "amsterdam-netherlands-travel-guide",
+    "prague-czech-republic-travel-guide",
+    "vienna-austria-travel-guide",
+    "santorini-greece-travel-guide",
+    "london-england-travel-guide",
+    "budapest-hungary-travel-guide",
+    "rome-italy-travel-guide"
+  ],
+  "detailed": [
+    {
+      "slug": "things-to-do-in-lisbon-portugal",
+      "name": "Things to Do in Lisbon Portugal: Complete Travel Guide 2025",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "kyoto-japan-travel-guide",
+      "name": "Kyoto Japan Travel Guide: Best Places to Visit & Things to Do",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "santorini-greece-travel-guide",
+      "name": "Santorini Greece Complete Guide: Best Places & Travel Tips",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "bali-trip-under-80000",
+      "name": "Bali Trip Under ₹80000: Complete Budget Travel Guide 2025",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "rome-italy-travel-guide",
+      "name": "Rome Italy Complete Guide: Best Attractions & Travel Tips",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "marrakech-morocco-travel-guide",
+      "name": "Marrakech Morocco Guide: Best Things to Do & See",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "new-york-city-travel-guide",
+      "name": "New York City Travel Guide: Top Things to Do & Places to Visit",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "cape-town-south-africa-travel-guide",
+      "name": "Cape Town South Africa: Complete Travel Guide & Itinerary",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "reykjavik-iceland-travel-guide",
+      "name": "Reykjavik Iceland Trip: Best Places to Visit & Travel Tips",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "sydney-australia-travel-guide",
+      "name": "Sydney Australia Travel Guide: Top Attractions & Things to Do",
+      "category": "World Destinations"
+    },
+    {
+      "slug": "taj-mahal-agra-travel-guide",
+      "name": "Taj Mahal Agra: Complete Travel Guide & Best Time to Visit",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "jaipur-rajasthan-travel-guide",
+      "name": "Jaipur Rajasthan Trip: Best Places to Visit & Things to Do",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Varanasi Uttar Pradesh: Complete Travel Guide & Itinerary",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "goa-trip-under-50000",
+      "name": "Goa Trip Under ₹50000: Complete Budget Travel Guide 2025",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "kerala-backwaters-travel-guide",
+      "name": "Kerala Backwaters: Best Places to Visit & Travel Guide",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "ladakh-travel-guide",
+      "name": "Ladakh Jammu Kashmir Trip: Complete Travel Guide & Budget",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Rishikesh Uttarakhand: Best Things to Do & Places to Visit",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "jaipur-rajasthan-travel-guide",
+      "name": "Udaipur Rajasthan Travel Guide: Top Attractions & Hidden Gems",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "mysore-karnataka-travel-guide",
+      "name": "Mysore Karnataka: Complete Travel Guide & Best Time to Visit",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "darjeeling-west-bengal-travel-guide",
+      "name": "Darjeeling West Bengal Trip: Best Places & Travel Tips",
+      "category": "Top India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Tawang Arunachal Pradesh: Hidden Gem Travel Guide 2025",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Ziro Valley Arunachal Pradesh: Offbeat Travel Guide",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "majuli-assam-travel-guide",
+      "name": "Majuli Assam: Complete Travel Guide to World's Largest River Island",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "mysore-karnataka-travel-guide",
+      "name": "Gokarna Karnataka: Best Beaches & Things to Do Guide",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Chopta Uttarakhand: Mini Switzerland Travel Guide & Tips",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "mysore-karnataka-travel-guide",
+      "name": "Hampi Karnataka: Complete Travel Guide to Ancient Ruins",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Spiti Valley Himachal Pradesh: Adventure Travel Guide",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "varanasi-uttar-pradesh-travel-guide",
+      "name": "Mechuka Arunachal Pradesh: Hidden Paradise Travel Guide",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "loktak-lake-manipur-travel-guide",
+      "name": "Loktak Lake Manipur: Floating Islands Travel Guide",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "ladakh-travel-guide",
+      "name": "Gurez Valley Jammu Kashmir: Offbeat Travel Guide 2025",
+      "category": "Hidden India Destinations"
+    },
+    {
+      "slug": "paris-france-travel-guide",
+      "name": "Paris France Travel Guide: Top Things to Do & Best Places",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "rome-italy-travel-guide",
+      "name": "Rome Italy Complete Guide: Best Attractions & Travel Tips",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "barcelona-spain-travel-guide",
+      "name": "Barcelona Spain Trip: Complete Travel Guide & Itinerary",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "amsterdam-netherlands-travel-guide",
+      "name": "Amsterdam Netherlands: Best Things to Do & Places to Visit",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "prague-czech-republic-travel-guide",
+      "name": "Prague Czech Republic: Complete Travel Guide 2025",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "vienna-austria-travel-guide",
+      "name": "Vienna Austria Travel Guide: Top Attractions & Hidden Gems",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "santorini-greece-travel-guide",
+      "name": "Santorini Greece Complete Guide: Best Places & Travel Tips",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "london-england-travel-guide",
+      "name": "London England Travel Guide: Top Things to Do & See",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "budapest-hungary-travel-guide",
+      "name": "Budapest Hungary Trip: Complete Travel Guide & Budget Tips",
+      "category": "Top Europe Destinations"
+    },
+    {
+      "slug": "rome-italy-travel-guide",
+      "name": "Venice Italy Travel Guide: Best Things to Do & Places to Visit",
+      "category": "Top Europe Destinations"
+    }
+  ]
+}

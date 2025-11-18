@@ -36,9 +36,9 @@ app.use(configureCors());
 app.use(
   createBasicRateLimiter(
     process.env.RATE_LIMIT_MAX_REQUESTS || 1000,
-    process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 10000
+    process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000  // Fixed: 15 minutes (was 150 minutes)
   )
-); // Rate limiting: 100 requests per 15 minutes
+); // Rate limiting: 1000 requests per 15 minutes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -74,6 +74,8 @@ const airportsRouter = require("./routes/airports-routes");
 const aiPlanningRouter = require("./routes/ai-planning-routes");
 const generatedPlansRoutes = require("./routes/generated-plans-routes");
 const favoritesRouter = require("./routes/favorites-routes");
+const blogsRouter = require("./routes/blogs-routes");
+const storiesRouter = require("./routes/stories-router");
 
 // Apply API versioning to all /api routes
 app.use("/api", urlVersioning("v1"));
@@ -86,11 +88,14 @@ app.use("/api/v1/test", testRouter);
 
 // Other API routes
 app.use("/api/v1/flights", flightsRouter);
+app.use("/api/v1/blogs", blogsRouter);
+app.use("/api/v1/stories", storiesRouter);
 app.use("/api/v1/hotels", hotelsRouter);
 app.use("/api/v1/location", locationRouter);
 app.use("/api/v1/cities", cityRouter);
 app.use("/api/v1/tours", toursRouter);
 app.use("/api/v1/viator", viatorRouter);
+app.use("/api/v1/travel", viatorRouter);
 app.use("/api/v1/airports", airportsRouter);
 app.use("/api/v1/ai-planning", aiPlanningRouter);
 app.use("/api/v1/generated", generatedPlansRoutes);

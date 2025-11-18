@@ -387,22 +387,22 @@ const getHotelDetails = async (req, res, next) => {
                 fees: pricing.fees
             },
             policies: {
-                checkIn: hotel.policies?.check_in,
-                checkOut: hotel.policies?.check_out,
-                cancellation: hotel.policies?.cancellation,
-                petPolicy: hotel.policies?.pet_policy
+                checkIn: property.policies?.check_in,
+                checkOut: property.policies?.check_out,
+                cancellation: property.policies?.cancellation,
+                petPolicy: property.policies?.pet_policy
             },
             reviews: {
-                overallRating: hotel.reviews?.overall_rating,
-                totalReviews: hotel.reviews?.total_reviews,
-                ratingBreakdown: hotel.reviews?.rating_breakdown
+                overallRating: property.reviews?.overall_rating,
+                totalReviews: property.reviews?.total_reviews,
+                ratingBreakdown: property.reviews?.rating_breakdown
             },
             contact: {
-                phone: hotel.contact?.phone,
-                email: hotel.contact?.email,
-                website: hotel.contact?.website
+                phone: property.contact?.phone,
+                email: property.contact?.email,
+                website: property.contact?.website
             },
-            links: hotel.links,
+            links: property.links,
             searchParams: checkInDate && checkOutDate ? {
                 checkInDate,
                 checkOutDate,

@@ -22,10 +22,10 @@ const globalErrorhandler = (err, req, res, next) => {
         })
     }
 
-    // handle mongoose validatoin ->
-    else if(err.name === "validationError"){
+    // handle mongoose validation errors
+    else if(err.name === "ValidationError"){
         return res.status(400).json({
-            stats:"error",
+            status:"error",
             message:"Validation Error",
         });
     }else{

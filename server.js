@@ -72,6 +72,8 @@ const toursRouter = require("./routes/tours-routes");
 const viatorRouter = require("./routes/viator-routes");
 const airportsRouter = require("./routes/airports-routes");
 const aiPlanningRouter = require("./routes/ai-planning-routes");
+const groqPlanningRouter = require("./routes/groq-planning-routes");
+const deepseekPlanningRouter = require("./routes/deepseek-planning-routes");
 const generatedPlansRoutes = require("./routes/generated-plans-routes");
 const favoritesRouter = require("./routes/favorites-routes");
 const blogsRouter = require("./routes/blogs-routes");
@@ -98,6 +100,8 @@ app.use("/api/v1/viator", viatorRouter);
 app.use("/api/v1/travel", viatorRouter);
 app.use("/api/v1/airports", airportsRouter);
 app.use("/api/v1/ai-planning", aiPlanningRouter);
+app.use("/api/v1/grok-planning", groqPlanningRouter);
+app.use("/api/v1/deepseek-planning", deepseekPlanningRouter);
 app.use("/api/v1/generated", generatedPlansRoutes);
 app.use("/api/v1/favorites", favoritesRouter);
 app.get("/api/v1", (req, res) => {

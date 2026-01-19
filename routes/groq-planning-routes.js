@@ -67,23 +67,26 @@ USER PREFERENCES:
 CRITICAL REQUIREMENTS:
 
 1. SPECIFIC LOCATIONS & ATTRACTIONS:
-   - Mention REAL, FAMOUS landmarks and attractions for ${country}
-   - For example, if Delhi: Jama Masjid, Red Fort, India Gate, Qutub Minar, etc.
-   - Include the ACTUAL names of popular restaurants, markets, temples, museums
-   - Provide specific neighborhood/area names where activities take place
+   - Mention ONLY real, well-known landmarks and attractions in ${country}
+   - Use accurate, officially recognized names (no generic or invented places)
+   - Example for Delhi: Jama Masjid, Red Fort, India Gate, Qutub Minar, Chandni Chowk
+   - Include ACTUAL names of popular restaurants, cafes, markets, temples, museums, and streets
+   - Clearly specify the neighborhood, district, or locality for every activity
+   - Avoid vague references like “local market” or “famous restaurant”
+
 
 2. DETAILED COST BREAKDOWN FOR EACH ACTIVITY:
-   - Entry/Admission fees (actual current prices in INR)
-   - Transportation costs (metro/taxi/auto from previous location in INR)
-   - Meal costs (breakfast/lunch/dinner at specific price ranges in INR)
-   - Shopping/miscellaneous estimated costs in INR
+   - Entry/Admission fees (actual current prices in INR) based on latest data regarding ${country}
+   - Transportation costs (metro/taxi/auto from previous location in INR) based on latest data regarding ${country}
+   - Meal costs (breakfast/lunch/dinner at specific price ranges in INR) based on latest data regarding ${country}
+   - Shopping/miscellaneous estimated costs in INR based on latest data regarding ${country}
    - Total cost for each time slot (Morning/Afternoon/Evening)
 
 3. REALISTIC PRICING:
    - Research and provide CURRENT, ACCURATE prices for ${country}
    - Match prices to the ${budget} budget level and ${travelStyle} travel style
-   - Budget style: local transport, street food, free/cheap attractions
-   - Luxury style: private transport, fine dining, premium experiences
+   - Budget style: local transport, street food, free/cheap attractions based on latest data regarding ${country}
+   - Luxury style: private transport, fine dining, premium experiences based on latest data regarding ${country}
 
 4. TIME MANAGEMENT:
    - Include realistic travel time between locations
@@ -163,11 +166,13 @@ JSON STRUCTURE:
         }
       ],
       "daily_total": 1640,
-      "accommodation": {
-        "type": "${travelStyle === 'Budget' ? 'Budget hotel/Hostel' : travelStyle === 'Luxury' ? 'Luxury hotel' : 'Mid-range hotel'}",
-        "estimated_cost": ${travelStyle === 'Budget' ? 800 : travelStyle === 'Luxury' ? 5000 : 2000}
-      }
-    }
+     "accommodation": {
+  "type": "Hotel appropriate for ${travelStyle} travel in ${country}",
+  "estimated_cost": "Price per night in INR based on real hotels in ${country} that match ${travelStyle} and ${budget}",
+  "notes": "Estimate should reflect actual nightly rates commonly paid by travelers in this destination"
+
+
+      },
   ],
   "budget_summary": {
     "accommodation_total": "₹[AMOUNT]",

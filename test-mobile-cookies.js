@@ -1,6 +1,7 @@
 const axios = require('axios');
 
-const BASE_URL = 'https://api.comfortmytrip.com';
+// const BASE_URL = 'https://api.comfortmytrip.com';
+const BASE_URL= 'travelapi-r7bq.onrender.com';
 
 async function testMobileCookies() {
     console.log('🧪 Testing Mobile Cookie Compatibility...\n');

@@ -6,10 +6,19 @@ const TravelPlan = require("../Models/TravelPlan");
 const { verifyToken } = require("../middleware/auth");
 
 // Initialize DeepSeek AI
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: "https://api.deepseek.com",
-});
+let deepseek;
+
+
+
+if (process.env.DEEPSEEK_API_KEY) {
+  deepseek = new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: "https://api.deepseek.com",
+  });
+}
+
+
+
 
 // All AI planning routes require authentication
 router.use(verifyToken());

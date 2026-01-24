@@ -100,10 +100,10 @@ app.use("/api/v1/tours", toursRouter);
 app.use("/api/v1/viator", viatorRouter);
 app.use("/api/v1/travel", viatorRouter);
 app.use("/api/v1/airports", airportsRouter);
-app.use("/api/v1/ai-planning", aiPlanningRouter);
+// app.use("/api/v1/ai-planning", aiPlanningRouter);
 app.use("/api/v1/grok-planning", groqPlanningRouter);
 app.use("/api/v1/shorts", shortsVideoRouter);
-app.use("/api/v1/deepseek-planning", deepseekPlanningRouter);
+// app.use("/api/v1/deepseek-planning", deepseekPlanningRouter);
 app.use("/api/v1/generated", generatedPlansRoutes);
 app.use("/api/v1/favorites", favoritesRouter);
 app.get("/api/v1", (req, res) => {

@@ -24,7 +24,7 @@ const getShortsVideo = async (req, res, next) => {
     const response = await fetch(
       `https://api.pexels.com/videos/search?query=${encodeURIComponent(
         city.trim()
-      )}&orientation=portrait&per_page=${perPage}&page=${page}`,
+      )} attractions&orientation=portrait&per_page=${perPage}&page=${page}`,
       {
         headers: { Authorization: process.env.PEXELS_API_KEY },
       }

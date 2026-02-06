@@ -79,6 +79,7 @@ const generatedPlansRoutes = require("./routes/generated-plans-routes");
 const favoritesRouter = require("./routes/favorites-routes");
 const blogsRouter = require("./routes/blogs-routes");
 const storiesRouter = require("./routes/stories-router");
+const travelRoutes=require("./routes/travel-routes");
 
 // Apply API versioning to all /api routes
 app.use("/api", urlVersioning("v1"));
@@ -106,6 +107,7 @@ app.use("/api/v1/shorts", shortsVideoRouter);
 // app.use("/api/v1/deepseek-planning", deepseekPlanningRouter);
 app.use("/api/v1/generated", generatedPlansRoutes);
 app.use("/api/v1/favorites", favoritesRouter);
+app.use("/api/v1/travel", travelRoutes);
 app.get("/api/v1", (req, res) => {
   res.json({ message: "Travel API v1 is running!" });
 });

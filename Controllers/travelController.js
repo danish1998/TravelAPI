@@ -3,14 +3,44 @@ const cheerio = require("cheerio");
 
 const searchTravelPlace = async (req, res) => {
   try {
-    const place = req.params.place;
-    if (!place) return res.status(400).json({ error: "Place required" });
+    const searchTerm = req.params.place;
+    if (!searchTerm) return res.status(400).json({ error: "Place required" });
 
-    const url = `https://en.wikivoyage.org/w/api.php?action=parse&page=${encodeURIComponent(
-      place
-    )}&prop=text&format=json&origin=*`;
+    // Step 1: Search for the correct page title
+    const searchUrl = `https://en.wikivoyage.org/w/api.php`;
+    const searchResponse = await axios.get(searchUrl, {
+      params: {
+        action: 'opensearch',
+        search: searchTerm,
+        limit: 1,
+        namespace: 0, // Main namespace only (articles)
+        format: 'json',
+        origin: '*'
+      },
+      headers: {
+        'User-Agent': 'TravelApp/1.0 (Educational Project; contact@example.com)',
+      },
+      timeout: 5000
+    });
 
+    const pageTitle = searchResponse.data[1]?.[0];
+    if (!pageTitle) {
+      return res.status(404).json({ 
+        error: "Place not found",
+        suggestion: "Try searching for a different location" 
+      });
+    }
+
+    // Step 2: Fetch the page content using the correct title
+    const url = `https://en.wikivoyage.org/w/api.php`;
     const response = await axios.get(url, {
+      params: {
+        action: 'parse',
+        page: pageTitle,
+        prop: 'text',
+        format: 'json',
+        origin: '*'
+      },
       headers: {
         'User-Agent': 'TravelApp/1.0 (Educational Project; contact@example.com)',
         'Accept': 'application/json',
@@ -19,8 +49,9 @@ const searchTravelPlace = async (req, res) => {
       timeout: 10000
     });
 
-    if (!response.data.parse)
+    if (!response.data.parse) {
       return res.status(404).json({ error: "Place not found" });
+    }
 
     const html = response.data.parse.text["*"];
     const $ = cheerio.load(html);
@@ -175,7 +206,7 @@ const searchTravelPlace = async (req, res) => {
         const unsplashUrl = `https://api.unsplash.com/search/photos`;
         const unsplashResponse = await axios.get(unsplashUrl, {
           params: {
-            query: place,
+            query: pageTitle, // Use the correct page title for better image results
             per_page: 10,
             orientation: 'landscape'
           },
@@ -192,7 +223,7 @@ const searchTravelPlace = async (req, res) => {
             url: photo.urls.regular,
             thumb: photo.urls.thumb,
             full: photo.urls.full,
-            description: photo.description || photo.alt_description || `${place} image`,
+            description: photo.description || photo.alt_description || `${pageTitle} image`,
             photographer: photo.user.name,
             photographerUrl: photo.user.links.html,
             downloadLink: photo.links.download_location
@@ -205,8 +236,8 @@ const searchTravelPlace = async (req, res) => {
       }
     }
 
-    const data ={ 
-      place: place.charAt(0).toUpperCase() + place.slice(1),
+    const data = { 
+      place: pageTitle, // Use the actual page title from Wikivoyage
       intro: intro || "No introduction available",
       regions: regions || "Information not available",
       cities: cities.length > 0 ? cities : ["No cities listed"],
@@ -217,9 +248,10 @@ const searchTravelPlace = async (req, res) => {
       transport: transport || "No transport information available",
       bestTimeToVisit: bestTimeToVisit || "Information not available",
       images: images,
-      source: "Wikivoyage",}
+      source: "Wikivoyage",
+    }
 
-    res.json({data});
+    res.json({ data });
   } catch (err) {
     console.error("Travel API error:", err.message);
     

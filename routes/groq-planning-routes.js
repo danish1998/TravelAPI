@@ -72,8 +72,7 @@ CRITICAL REQUIREMENTS:
    - Example for Delhi: Jama Masjid, Red Fort, India Gate, Qutub Minar, Chandni Chowk
    - Include ACTUAL names of popular restaurants, cafes, markets, temples, museums, and streets
    - Clearly specify the neighborhood, district, or locality for every activity
-   - Avoid vague references like “local market” or “famous restaurant”
-
+   - Avoid vague references like "local market" or "famous restaurant"
 
 2. DETAILED COST BREAKDOWN FOR EACH ACTIVITY:
    - Entry/Admission fees (actual current prices in INR) based on latest data regarding ${country}
@@ -94,6 +93,7 @@ CRITICAL REQUIREMENTS:
    - Account for opening/closing times
 
 YOU MUST RESPOND WITH ONLY VALID JSON. No markdown, no code blocks, no explanatory text.
+ALL NUMERIC VALUES MUST BE NUMBERS, NOT STRINGS. DO NOT include currency symbols (₹) in numeric fields.
 
 JSON STRUCTURE:
 {
@@ -166,13 +166,12 @@ JSON STRUCTURE:
         }
       ],
       "daily_total": 1640,
-     "accommodation": {
-  "type": "Hotel appropriate for ${travelStyle} travel in ${country}",
-  "estimated_cost": "Price per night in INR based on real hotels in ${country} that match ${travelStyle} and ${budget}",
-  "notes": "Estimate should reflect actual nightly rates commonly paid by travelers in this destination"
-
-
-      },
+      "accommodation": {
+        "type": "Hotel appropriate for ${travelStyle} travel in ${country}",
+        "estimated_cost": 3500,
+        "notes": "Estimate should reflect actual nightly rates commonly paid by travelers in this destination"
+      }
+    }
   ],
   "budget_summary": {
     "accommodation_total": "₹[AMOUNT]",
@@ -184,9 +183,13 @@ JSON STRUCTURE:
   }
 }
 
+CRITICAL: All cost fields (entry_fee, transport, breakfast, lunch, dinner, misc, total, daily_total, estimated_cost) MUST be plain numbers without any currency symbols.
+Example: "estimated_cost": 3500 (CORRECT)
+Example: "estimated_cost": "₹3500" (WRONG - will cause validation error)
+
 IMPORTANT REMINDERS:
 - Use REAL attraction names for ${country}
-- Provide ACCURATE current prices in INR
+- Provide ACCURATE current prices in INR as NUMBERS ONLY
 - Include detailed cost breakdowns for EVERY activity
 - Each day should have Morning, Afternoon, and Evening activities
 - Calculate realistic daily totals and grand total
@@ -209,7 +212,7 @@ IMPORTANT REMINDERS:
           {
             role: 'system',
             content:
-              'You are an expert travel planner. You MUST respond only with valid JSON. No markdown, no code blocks, no explanation.',
+              'You are an expert travel planner. You MUST respond only with valid JSON. No markdown, no code blocks, no explanation. All numeric cost fields must be plain numbers without currency symbols.',
           },
           {
             role: 'user',
@@ -324,24 +327,50 @@ IMPORTANT REMINDERS:
               return `${activity.time}: ${activity.description}${costInfo}${tips}`;
             }) || [];
 
-          const dailyCost =
-            day.daily_total ||
-            (day.activities?.reduce(
-              (sum, act) => sum + (act.cost_breakdown?.total || 0),
-              0
-            ) || 0);
+          // FIX: Extract only numbers, handle string/number types
+          let dailyCost = 0;
+          if (typeof day.daily_total === 'number') {
+            dailyCost = day.daily_total;
+          } else if (day.daily_total) {
+            // Remove any currency symbols and parse as number
+            dailyCost = parseFloat(String(day.daily_total).replace(/[^\d.]/g, '')) || 0;
+          }
 
-          const accommodationCost = day.accommodation?.estimated_cost || 0;
-          const totalDailyCost = dailyCost + accommodationCost;
+          // Calculate daily cost from activities if not provided
+          if (dailyCost === 0) {
+            dailyCost = day.activities?.reduce(
+              (sum, act) => {
+                const actTotal = act.cost_breakdown?.total || 0;
+                return sum + (typeof actTotal === 'number' ? actTotal : parseFloat(String(actTotal).replace(/[^\d.]/g, '')) || 0);
+              },
+              0
+            ) || 0;
+          }
+
+          // FIX: Extract accommodation cost as number
+          let accommodationCost = 0;
+          if (day.accommodation?.estimated_cost) {
+            if (typeof day.accommodation.estimated_cost === 'number') {
+              accommodationCost = day.accommodation.estimated_cost;
+            } else {
+              // Remove currency symbols and parse
+              accommodationCost = parseFloat(
+                String(day.accommodation.estimated_cost).replace(/[^\d.]/g, '')
+              ) || 0;
+            }
+          }
+
+          // FIX: Ensure numeric addition
+          const totalDailyCost = Number(dailyCost) + Number(accommodationCost);
 
           return {
             day: day.day,
             location: day.location,
             activities,
-            estimatedCost: totalDailyCost,
+            estimatedCost: totalDailyCost, // Now it's a clean number
             timeRequired: 'Full day',
             accommodation: day.accommodation
-              ? `${day.accommodation.type} - ₹${day.accommodation.estimated_cost}`
+              ? `${day.accommodation.type} - ₹${accommodationCost}`
               : null,
           };
         }) || [],
@@ -358,10 +387,13 @@ IMPORTANT REMINDERS:
       budgetSummary: trip.budget_summary || null,
     };
 
-    // Calculate total cost from daily costs
+    // FIX: Calculate total cost properly as number
     transformedRecommendations.totalEstimatedCost =
       transformedRecommendations.itinerary.reduce(
-        (total, day) => total + (day.totalCost || day.estimatedCost || 0),
+        (total, day) => {
+          const dayCost = Number(day.estimatedCost) || 0;
+          return total + dayCost;
+        },
         0
       );
 

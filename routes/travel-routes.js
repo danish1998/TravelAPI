@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { searchTravelPlace } = require("../controllers/travelController");
+const { searchTravelPlace } = require("../Controllers/travelController");
 
 router.get("/:place", searchTravelPlace);
 
